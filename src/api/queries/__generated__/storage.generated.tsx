@@ -19,6 +19,13 @@ export type GetStorageDataObjectsCountQueryVariables = Types.Exact<{
 
 export type GetStorageDataObjectsCountQuery = { __typename: 'Query', storageDataObjectsConnection: { __typename: 'StorageDataObjectConnection', totalCount: number } };
 
+export type GetStorageBucketsQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.StorageBucketWhereInput>;
+}>;
+
+
+export type GetStorageBucketsQuery = { __typename: 'Query', storageBuckets: Array<{ __typename: 'StorageBucket', dataObjectsCount: string, dataObjectsSize: string, createdAt: any }> };
+
 
 export const GetStorageDataObjectsDocument = gql`
     query GetStorageDataObjects($offset: Int, $limit: Int, $where: StorageDataObjectWhereInput) {
@@ -99,3 +106,40 @@ export function useGetStorageDataObjectsCountLazyQuery(baseOptions?: Apollo.Lazy
 export type GetStorageDataObjectsCountQueryHookResult = ReturnType<typeof useGetStorageDataObjectsCountQuery>;
 export type GetStorageDataObjectsCountLazyQueryHookResult = ReturnType<typeof useGetStorageDataObjectsCountLazyQuery>;
 export type GetStorageDataObjectsCountQueryResult = Apollo.QueryResult<GetStorageDataObjectsCountQuery, GetStorageDataObjectsCountQueryVariables>;
+export const GetStorageBucketsDocument = gql`
+    query GetStorageBuckets($where: StorageBucketWhereInput) {
+  storageBuckets(where: $where) {
+    dataObjectsCount
+    dataObjectsSize
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetStorageBucketsQuery__
+ *
+ * To run a query within a React component, call `useGetStorageBucketsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetStorageBucketsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetStorageBucketsQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetStorageBucketsQuery(baseOptions?: Apollo.QueryHookOptions<GetStorageBucketsQuery, GetStorageBucketsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetStorageBucketsQuery, GetStorageBucketsQueryVariables>(GetStorageBucketsDocument, options);
+      }
+export function useGetStorageBucketsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetStorageBucketsQuery, GetStorageBucketsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetStorageBucketsQuery, GetStorageBucketsQueryVariables>(GetStorageBucketsDocument, options);
+        }
+export type GetStorageBucketsQueryHookResult = ReturnType<typeof useGetStorageBucketsQuery>;
+export type GetStorageBucketsLazyQueryHookResult = ReturnType<typeof useGetStorageBucketsLazyQuery>;
+export type GetStorageBucketsQueryResult = Apollo.QueryResult<GetStorageBucketsQuery, GetStorageBucketsQueryVariables>;

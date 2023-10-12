@@ -28,6 +28,16 @@ export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
   return councils.electedCouncils.map(asElectedCouncil);
 };
 
+export const getStorageBuget = async (start: Date) => {
+  const { GetStorageBuckets } = getSdk(client);
+  const { storageBuckets } = await GetStorageBuckets({ where: { createdAt_lte: start } })
+  let size = 0;
+  storageBuckets.map((d) => {
+    size += parseInt(d.dataObjectsSize);
+  })
+  console.log("storageBuget size", size);
+}
+
 export const getElectedCouncilById = async (
   id: string
 ): Promise<ElectedCouncil> => {
@@ -403,25 +413,25 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
   let loop = Math.ceil(totalCount / defalultOffset);
   let startStorage = 0;
   let endStorage = 0;
-  for (let i = 0; i < loop; i++) {
-    const { storageDataObjects } = await GetStorageDataObjects({
-      where: {
-        createdAt_lte: end
-      },
-      limit: defalultOffset,
-      offset: defalultOffset * i
-    });
-    storageDataObjects.map((storage) => {
-      if (start) {
-        let storageCreateAt = new Date(storage.createdAt);
+  // for (let i = 0; i < loop; i++) {
+  //   const { storageDataObjects } = await GetStorageDataObjects({
+  //     where: {
+  //       createdAt_lte: end
+  //     },
+  //     limit: defalultOffset,
+  //     offset: defalultOffset * i
+  //   });
+  //   storageDataObjects.map((storage) => {
+  //     if (start) {
+  //       let storageCreateAt = new Date(storage.createdAt);
 
-        if (storageCreateAt <= start) {
-          startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-        }
-      }
-      endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-    })
-  }
+  //       if (storageCreateAt <= start) {
+  //         startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+  //       }
+  //     }
+  //     endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+  //   })
+  // }
   return {
     startStorage: decimalAdjust(startStorage),
     endStorage: decimalAdjust(endStorage)

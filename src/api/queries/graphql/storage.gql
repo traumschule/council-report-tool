@@ -21,3 +21,10 @@ query GetStorageDataObjectsCount($where: StorageDataObjectWhereInput) {
   }
 }
 
+query GetStorageBuckets($where:StorageBucketWhereInput){
+  storageBuckets(where:$where){
+    dataObjectsCount
+    dataObjectsSize
+    createdAt
+  }
+}

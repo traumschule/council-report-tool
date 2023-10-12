@@ -37483,6 +37483,13 @@ export type GetStorageDataObjectsCountQueryVariables = Exact<{
 
 export type GetStorageDataObjectsCountQuery = { __typename: 'Query', storageDataObjectsConnection: { __typename: 'StorageDataObjectConnection', totalCount: number } };
 
+export type GetStorageBucketsQueryVariables = Exact<{
+  where?: InputMaybe<StorageBucketWhereInput>;
+}>;
+
+
+export type GetStorageBucketsQuery = { __typename: 'Query', storageBuckets: Array<{ __typename: 'StorageBucket', dataObjectsCount: string, dataObjectsSize: string, createdAt: any }> };
+
 export type MintedTokensQueryVariables = Exact<{
   where?: InputMaybe<RewardPaymentEventWhereInput>;
 }>;
@@ -38542,6 +38549,15 @@ export const GetStorageDataObjectsCountDocument = gql`
   }
 }
     `;
+export const GetStorageBucketsDocument = gql`
+    query GetStorageBuckets($where: StorageBucketWhereInput) {
+  storageBuckets(where: $where) {
+    dataObjectsCount
+    dataObjectsSize
+    createdAt
+  }
+}
+    `;
 export const MintedTokensDocument = gql`
     query mintedTokens($where: RewardPaymentEventWhereInput) {
   rewardPaymentEvents(where: $where) {
@@ -38976,6 +38992,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetStorageDataObjectsCount(variables?: GetStorageDataObjectsCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetStorageDataObjectsCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetStorageDataObjectsCountQuery>(GetStorageDataObjectsCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetStorageDataObjectsCount', 'query');
+    },
+    GetStorageBuckets(variables?: GetStorageBucketsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetStorageBucketsQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetStorageBucketsQuery>(GetStorageBucketsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetStorageBuckets', 'query');
     },
     mintedTokens(variables?: MintedTokensQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<MintedTokensQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<MintedTokensQuery>(MintedTokensDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'mintedTokens', 'query');
