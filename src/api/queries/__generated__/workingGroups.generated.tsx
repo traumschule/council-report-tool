@@ -122,6 +122,13 @@ export type GetWorkingGroupOpeningsQueryVariables = Types.Exact<{
 
 export type GetWorkingGroupOpeningsQuery = { __typename: 'Query', workingGroupOpenings: Array<{ __typename: 'WorkingGroupOpening', id: string, runtimeId: number, groupId: string, type: Types.WorkingGroupOpeningType, stakeAmount: string, rewardPerBlock: string, unstakingPeriod: number, group: { __typename: 'WorkingGroup', name: string, budget: string, leaderId?: string | null }, createdInEvent: { __typename: 'OpeningAddedEvent', inBlock: number, network: Types.Network, createdAt: any }, metadata: { __typename: 'WorkingGroupOpeningMetadata', title?: string | null, applicationDetails?: string | null, shortDescription?: string | null, description?: string | null, hiringLimit?: number | null, expectedEnding?: any | null }, status: { __typename: 'OpeningStatusCancelled' } | { __typename: 'OpeningStatusFilled' } | { __typename: 'OpeningStatusOpen' }, applications: Array<{ __typename: 'WorkingGroupApplication', id: string, status: { __typename: 'ApplicationStatusAccepted' } | { __typename: 'ApplicationStatusCancelled' } | { __typename: 'ApplicationStatusPending' } | { __typename: 'ApplicationStatusRejected' } | { __typename: 'ApplicationStatusWithdrawn' } }>, openingfilledeventopening?: Array<{ __typename: 'OpeningFilledEvent', workersHired: Array<{ __typename: 'Worker', id: string }> }> | null }> };
 
+export type GetWorkingGroupOpeningsTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.WorkingGroupOpeningWhereInput>;
+}>;
+
+
+export type GetWorkingGroupOpeningsTotalCountQuery = { __typename: 'Query', workingGroupOpeningsConnection: { __typename: 'WorkingGroupOpeningConnection', totalCount: number } };
+
 export type SimpleSearchWorkingGroupOpeningsQueryVariables = Types.Exact<{
   text: Types.Scalars['String']['input'];
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
@@ -181,6 +188,13 @@ export type GetWorkingGroupApplicationsQueryVariables = Types.Exact<{
 
 
 export type GetWorkingGroupApplicationsQuery = { __typename: 'Query', workingGroupApplications: Array<{ __typename: 'WorkingGroupApplication', id: string, runtimeId: number, stakingAccount: string, stake: string, roleAccount: string, answers: Array<{ __typename: 'ApplicationFormQuestionAnswer', answer: string, question: { __typename: 'ApplicationFormQuestion', question?: string | null } }>, opening: { __typename: 'WorkingGroupOpening', id: string, type: Types.WorkingGroupOpeningType, rewardPerBlock: string, group: { __typename: 'WorkingGroup', id: string, name: string }, metadata: { __typename: 'WorkingGroupOpeningMetadata', expectedEnding?: any | null } }, applicant: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, status: { __typename: 'ApplicationStatusAccepted' } | { __typename: 'ApplicationStatusCancelled' } | { __typename: 'ApplicationStatusPending' } | { __typename: 'ApplicationStatusRejected' } | { __typename: 'ApplicationStatusWithdrawn' }, createdInEvent: { __typename: 'AppliedOnOpeningEvent', createdAt: any, inBlock: number, network: Types.Network } }> };
+
+export type GetWorkingGroupApplicationsTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.WorkingGroupApplicationWhereInput>;
+}>;
+
+
+export type GetWorkingGroupApplicationsTotalCountQuery = { __typename: 'Query', workingGroupApplicationsConnection: { __typename: 'WorkingGroupApplicationConnection', totalCount: number } };
 
 export type SimpleSearchWorkingGroupApplicationsQueryVariables = Types.Exact<{
   text: Types.Scalars['String']['input'];
@@ -1032,6 +1046,41 @@ export function useGetWorkingGroupOpeningsLazyQuery(baseOptions?: Apollo.LazyQue
 export type GetWorkingGroupOpeningsQueryHookResult = ReturnType<typeof useGetWorkingGroupOpeningsQuery>;
 export type GetWorkingGroupOpeningsLazyQueryHookResult = ReturnType<typeof useGetWorkingGroupOpeningsLazyQuery>;
 export type GetWorkingGroupOpeningsQueryResult = Apollo.QueryResult<GetWorkingGroupOpeningsQuery, GetWorkingGroupOpeningsQueryVariables>;
+export const GetWorkingGroupOpeningsTotalCountDocument = gql`
+    query GetWorkingGroupOpeningsTotalCount($where: WorkingGroupOpeningWhereInput) {
+  workingGroupOpeningsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetWorkingGroupOpeningsTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetWorkingGroupOpeningsTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetWorkingGroupOpeningsTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetWorkingGroupOpeningsTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetWorkingGroupOpeningsTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetWorkingGroupOpeningsTotalCountQuery, GetWorkingGroupOpeningsTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetWorkingGroupOpeningsTotalCountQuery, GetWorkingGroupOpeningsTotalCountQueryVariables>(GetWorkingGroupOpeningsTotalCountDocument, options);
+      }
+export function useGetWorkingGroupOpeningsTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetWorkingGroupOpeningsTotalCountQuery, GetWorkingGroupOpeningsTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetWorkingGroupOpeningsTotalCountQuery, GetWorkingGroupOpeningsTotalCountQueryVariables>(GetWorkingGroupOpeningsTotalCountDocument, options);
+        }
+export type GetWorkingGroupOpeningsTotalCountQueryHookResult = ReturnType<typeof useGetWorkingGroupOpeningsTotalCountQuery>;
+export type GetWorkingGroupOpeningsTotalCountLazyQueryHookResult = ReturnType<typeof useGetWorkingGroupOpeningsTotalCountLazyQuery>;
+export type GetWorkingGroupOpeningsTotalCountQueryResult = Apollo.QueryResult<GetWorkingGroupOpeningsTotalCountQuery, GetWorkingGroupOpeningsTotalCountQueryVariables>;
 export const SimpleSearchWorkingGroupOpeningsDocument = gql`
     query SimpleSearchWorkingGroupOpenings($text: String!, $limit: Int) {
   workingGroupOpenings(
@@ -1290,6 +1339,41 @@ export function useGetWorkingGroupApplicationsLazyQuery(baseOptions?: Apollo.Laz
 export type GetWorkingGroupApplicationsQueryHookResult = ReturnType<typeof useGetWorkingGroupApplicationsQuery>;
 export type GetWorkingGroupApplicationsLazyQueryHookResult = ReturnType<typeof useGetWorkingGroupApplicationsLazyQuery>;
 export type GetWorkingGroupApplicationsQueryResult = Apollo.QueryResult<GetWorkingGroupApplicationsQuery, GetWorkingGroupApplicationsQueryVariables>;
+export const GetWorkingGroupApplicationsTotalCountDocument = gql`
+    query GetWorkingGroupApplicationsTotalCount($where: WorkingGroupApplicationWhereInput) {
+  workingGroupApplicationsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetWorkingGroupApplicationsTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetWorkingGroupApplicationsTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetWorkingGroupApplicationsTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetWorkingGroupApplicationsTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetWorkingGroupApplicationsTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetWorkingGroupApplicationsTotalCountQuery, GetWorkingGroupApplicationsTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetWorkingGroupApplicationsTotalCountQuery, GetWorkingGroupApplicationsTotalCountQueryVariables>(GetWorkingGroupApplicationsTotalCountDocument, options);
+      }
+export function useGetWorkingGroupApplicationsTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetWorkingGroupApplicationsTotalCountQuery, GetWorkingGroupApplicationsTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetWorkingGroupApplicationsTotalCountQuery, GetWorkingGroupApplicationsTotalCountQueryVariables>(GetWorkingGroupApplicationsTotalCountDocument, options);
+        }
+export type GetWorkingGroupApplicationsTotalCountQueryHookResult = ReturnType<typeof useGetWorkingGroupApplicationsTotalCountQuery>;
+export type GetWorkingGroupApplicationsTotalCountLazyQueryHookResult = ReturnType<typeof useGetWorkingGroupApplicationsTotalCountLazyQuery>;
+export type GetWorkingGroupApplicationsTotalCountQueryResult = Apollo.QueryResult<GetWorkingGroupApplicationsTotalCountQuery, GetWorkingGroupApplicationsTotalCountQueryVariables>;
 export const SimpleSearchWorkingGroupApplicationsDocument = gql`
     query SimpleSearchWorkingGroupApplications($text: String!, $limit: Int) {
   workingGroupApplications(

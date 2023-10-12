@@ -277,6 +277,14 @@ query GetWorkingGroupOpenings(
   }
 }
 
+query GetWorkingGroupOpeningsTotalCount(
+    $where: WorkingGroupOpeningWhereInput
+) {
+  workingGroupOpeningsConnection(where:$where){
+    totalCount
+  }
+}
+
 query SimpleSearchWorkingGroupOpenings($text: String!, $limit: Int) {
   workingGroupOpenings(
     where: { metadata: { shortDescription_contains: $text } }
@@ -415,6 +423,14 @@ query GetWorkingGroupApplications(
 ) {
   workingGroupApplications(where: $where, orderBy: $orderBy, limit: $limit) {
     ...WorkingGroupApplicationFields
+  }
+}
+
+query GetWorkingGroupApplicationsTotalCount(
+  $where:WorkingGroupApplicationWhereInput
+) {
+  workingGroupApplicationsConnection(where:$where){
+    totalCount
   }
 }
 

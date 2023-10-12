@@ -37658,6 +37658,13 @@ export type GetWorkingGroupOpeningsQueryVariables = Exact<{
 
 export type GetWorkingGroupOpeningsQuery = { __typename: 'Query', workingGroupOpenings: Array<{ __typename: 'WorkingGroupOpening', id: string, runtimeId: number, groupId: string, type: WorkingGroupOpeningType, stakeAmount: string, rewardPerBlock: string, unstakingPeriod: number, group: { __typename: 'WorkingGroup', name: string, budget: string, leaderId?: string | null }, createdInEvent: { __typename: 'OpeningAddedEvent', inBlock: number, network: Network, createdAt: any }, metadata: { __typename: 'WorkingGroupOpeningMetadata', title?: string | null, applicationDetails?: string | null, shortDescription?: string | null, description?: string | null, hiringLimit?: number | null, expectedEnding?: any | null }, status: { __typename: 'OpeningStatusCancelled' } | { __typename: 'OpeningStatusFilled' } | { __typename: 'OpeningStatusOpen' }, applications: Array<{ __typename: 'WorkingGroupApplication', id: string, status: { __typename: 'ApplicationStatusAccepted' } | { __typename: 'ApplicationStatusCancelled' } | { __typename: 'ApplicationStatusPending' } | { __typename: 'ApplicationStatusRejected' } | { __typename: 'ApplicationStatusWithdrawn' } }>, openingfilledeventopening?: Array<{ __typename: 'OpeningFilledEvent', workersHired: Array<{ __typename: 'Worker', id: string }> }> | null }> };
 
+export type GetWorkingGroupOpeningsTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<WorkingGroupOpeningWhereInput>;
+}>;
+
+
+export type GetWorkingGroupOpeningsTotalCountQuery = { __typename: 'Query', workingGroupOpeningsConnection: { __typename: 'WorkingGroupOpeningConnection', totalCount: number } };
+
 export type SimpleSearchWorkingGroupOpeningsQueryVariables = Exact<{
   text: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -37717,6 +37724,13 @@ export type GetWorkingGroupApplicationsQueryVariables = Exact<{
 
 
 export type GetWorkingGroupApplicationsQuery = { __typename: 'Query', workingGroupApplications: Array<{ __typename: 'WorkingGroupApplication', id: string, runtimeId: number, stakingAccount: string, stake: string, roleAccount: string, answers: Array<{ __typename: 'ApplicationFormQuestionAnswer', answer: string, question: { __typename: 'ApplicationFormQuestion', question?: string | null } }>, opening: { __typename: 'WorkingGroupOpening', id: string, type: WorkingGroupOpeningType, rewardPerBlock: string, group: { __typename: 'WorkingGroup', id: string, name: string }, metadata: { __typename: 'WorkingGroupOpeningMetadata', expectedEnding?: any | null } }, applicant: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, status: { __typename: 'ApplicationStatusAccepted' } | { __typename: 'ApplicationStatusCancelled' } | { __typename: 'ApplicationStatusPending' } | { __typename: 'ApplicationStatusRejected' } | { __typename: 'ApplicationStatusWithdrawn' }, createdInEvent: { __typename: 'AppliedOnOpeningEvent', createdAt: any, inBlock: number, network: Network } }> };
+
+export type GetWorkingGroupApplicationsTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<WorkingGroupApplicationWhereInput>;
+}>;
+
+
+export type GetWorkingGroupApplicationsTotalCountQuery = { __typename: 'Query', workingGroupApplicationsConnection: { __typename: 'WorkingGroupApplicationConnection', totalCount: number } };
 
 export type SimpleSearchWorkingGroupApplicationsQueryVariables = Exact<{
   text: Scalars['String']['input'];
@@ -38702,6 +38716,13 @@ export const GetWorkingGroupOpeningsDocument = gql`
   }
 }
     ${WorkingGroupOpeningFieldsFragmentDoc}`;
+export const GetWorkingGroupOpeningsTotalCountDocument = gql`
+    query GetWorkingGroupOpeningsTotalCount($where: WorkingGroupOpeningWhereInput) {
+  workingGroupOpeningsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const SimpleSearchWorkingGroupOpeningsDocument = gql`
     query SimpleSearchWorkingGroupOpenings($text: String!, $limit: Int) {
   workingGroupOpenings(
@@ -38761,6 +38782,13 @@ export const GetWorkingGroupApplicationsDocument = gql`
   }
 }
     ${WorkingGroupApplicationFieldsFragmentDoc}`;
+export const GetWorkingGroupApplicationsTotalCountDocument = gql`
+    query GetWorkingGroupApplicationsTotalCount($where: WorkingGroupApplicationWhereInput) {
+  workingGroupApplicationsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const SimpleSearchWorkingGroupApplicationsDocument = gql`
     query SimpleSearchWorkingGroupApplications($text: String!, $limit: Int) {
   workingGroupApplications(
@@ -39006,6 +39034,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetWorkingGroupOpenings(variables?: GetWorkingGroupOpeningsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkingGroupOpeningsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetWorkingGroupOpeningsQuery>(GetWorkingGroupOpeningsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkingGroupOpenings', 'query');
     },
+    GetWorkingGroupOpeningsTotalCount(variables?: GetWorkingGroupOpeningsTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkingGroupOpeningsTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetWorkingGroupOpeningsTotalCountQuery>(GetWorkingGroupOpeningsTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkingGroupOpeningsTotalCount', 'query');
+    },
     SimpleSearchWorkingGroupOpenings(variables: SimpleSearchWorkingGroupOpeningsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<SimpleSearchWorkingGroupOpeningsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<SimpleSearchWorkingGroupOpeningsQuery>(SimpleSearchWorkingGroupOpeningsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'SimpleSearchWorkingGroupOpenings', 'query');
     },
@@ -39026,6 +39057,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetWorkingGroupApplications(variables?: GetWorkingGroupApplicationsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkingGroupApplicationsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetWorkingGroupApplicationsQuery>(GetWorkingGroupApplicationsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkingGroupApplications', 'query');
+    },
+    GetWorkingGroupApplicationsTotalCount(variables?: GetWorkingGroupApplicationsTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkingGroupApplicationsTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetWorkingGroupApplicationsTotalCountQuery>(GetWorkingGroupApplicationsTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkingGroupApplicationsTotalCount', 'query');
     },
     SimpleSearchWorkingGroupApplications(variables: SimpleSearchWorkingGroupApplicationsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<SimpleSearchWorkingGroupApplicationsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<SimpleSearchWorkingGroupApplicationsQuery>(SimpleSearchWorkingGroupApplicationsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'SimpleSearchWorkingGroupApplications', 'query');

@@ -46,7 +46,8 @@ export async function generateReport1(api: ApiPromise, blockNumber: number) {
     hash: blockHash,
     timestamp: blockTimestamp,
   };
-
+  const endBalance = toJoy(await getBalance(api, MEXC_WALLET, blockHash));
+  console.log("endBalance ", endBalance);
   const {
     videosConnection: { totalCount: videoCount },
   } = await GetVideoCount({
@@ -171,29 +172,28 @@ export async function generateReport2(
     ((startIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const inflationChange = endInflation - startInflation;
-  // const blocksEvents = await getEvent(api, startBlockNumber, endBlockNumber);
-  // for (let [, blockEvents] of blocksEvents) {
-  //   blockEvents.map((event) => {
-  //     console.log(event);
-  //     if (event.section == 'balances') {
-  //       if (event.method == 'BalanceSet') {
-  //         let amount = event.data[1] as Balance;
-  //         mint += toJoy(amount);
-  //       }
-  //       if (event.method == 'Transfer') {
-  //         let amount = event.data[2] as Balance;
-  //         let receiver = event.data[1] as AccountId;
-  //         if (receiver.toString() == BURN_ADDRESS) {
-  //           burn += toJoy(amount);
-  //         }
-  //       }
-  //     }
-  //     if (event.section == 'staking' && event.method == 'Reward') {
-  //       let amount = event.data[1] as Balance;
-  //       reward += toJoy(amount);
-  //     }
-  //   })
-  // }
+  const blocksEvents = await getEvent(api, startBlockNumber, endBlockNumber);
+  for (let [, blockEvents] of blocksEvents) {
+    blockEvents.map((event) => {
+      if (event.section == 'balances') {
+        if (event.method == 'BalanceSet') {
+          let amount = event.data[1] as Balance;
+          mint += toJoy(amount);
+        }
+        if (event.method == 'Transfer') {
+          let amount = event.data[2] as Balance;
+          let receiver = event.data[1] as AccountId;
+          if (receiver.toString() == BURN_ADDRESS) {
+            burn += toJoy(amount);
+          }
+        }
+      }
+      if (event.section == 'staking' && event.method == 'Reward') {
+        let amount = event.data[1] as Balance;
+        reward += toJoy(amount);
+      }
+    })
+  }
   // TODO mited/burned
   const supply = {
     inflationChange,
@@ -407,6 +407,10 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
+  const workingGroup = await getWorkingGroupStatus(
+    startBlockTimestamp,
+    endBlockTimestamp
+  );
   const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockNumber);
   const nonEmptyChannel = {
     startCount,
@@ -429,10 +433,6 @@ export async function generateReport4(
   };
 
   const membership = await getMembershipStatus(
-    startBlockTimestamp,
-    endBlockTimestamp
-  );
-  const workingGroup = await getWorkingGroupStatus(
     startBlockTimestamp,
     endBlockTimestamp
   );

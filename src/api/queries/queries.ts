@@ -294,7 +294,6 @@ export const getVideoChartData = async (start: Date, end: Date) => {
   return data;
 };
 
-// TODO: Check non-empty channel count logic
 export const getChannelStatus = async (endBlockNumber: number, startBlockNumber?: number) => {
   const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
   const defaultLimit = 1000;
@@ -318,8 +317,6 @@ export const getChannelStatus = async (endBlockNumber: number, startBlockNumber?
       let flag = endCount.filter((a) => {
         return a == video.channelId;
       })
-      console.log("flag ", flag);
-
       if (flag.length == 0) {
         if (startBlockNumber) {
           if (video.createdInBlock <= startBlockNumber) {
@@ -707,32 +704,36 @@ export const getForumStatus = async (start: Date, end: Date) => {
 
 export const getWorkingGroupStatus = async (start: Date, end: Date) => {
   const {
-    GetWorkingGroupOpenings,
-    GetWorkingGroupApplications,
+    GetWorkingGroupApplicationsTotalCount,
+    GetWorkingGroupOpeningsTotalCount,
     GetOpeningFilledEventsConnection,
     GetTerminatedWorkerEventsConnection,
     GetWorkerExitedEventsConnection,
   } = getSdk(client);
-
-  const { workingGroupOpenings: startOpenings } = await GetWorkingGroupOpenings(
-    {
-      where: {
-        createdAt_lte: start,
-        status_json: { isTypeOf_eq: "OpeningStatusOpen" },
-      },
-    }
-  );
-  const { workingGroupOpenings: endOpenings } = await GetWorkingGroupOpenings({
+  const { workingGroupOpeningsConnection: { totalCount: startOpeningCount } } = await GetWorkingGroupOpeningsTotalCount({
+    where: {
+      createdAt_lte: start,
+      status_json: { isTypeOf_eq: "OpeningStatusOpen" },
+    },
+  });
+  const { workingGroupOpeningsConnection: { totalCount: endOpeningCount } } = await GetWorkingGroupOpeningsTotalCount({
     where: {
       createdAt_lte: end,
       status_json: { isTypeOf_eq: "OpeningStatusOpen" },
     },
   });
+  const { workingGroupApplicationsConnection: { totalCount: startApplicationCount } } = await GetWorkingGroupApplicationsTotalCount({
+    where: {
+      createdAt_lte: start
+    }
+  });
+  const { workingGroupApplicationsConnection: { totalCount: endApplicationCount } } = await GetWorkingGroupApplicationsTotalCount({
+    where: {
+      createdAt_lte: start
+    }
+  });
 
-  const { workingGroupApplications: applications } =
-    await GetWorkingGroupApplications({
-      where: { createdAt_gte: start, createdAt_lte: end },
-    });
+
 
   const {
     openingFilledEventsConnection: { totalCount: filledCount },
@@ -753,9 +754,10 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
   });
 
   return {
-    openings: endOpenings.length,
-    openingsChange: endOpenings.length - startOpenings.length,
-    applications: applications.length,
+    openings: endOpeningCount,
+    openingsChange: (endOpeningCount - startOpeningCount),
+    applications: endApplicationCount,
+    applicationsChange: (endApplicationCount - startApplicationCount),
     filledCount,
     terminatedCount,
     leftCount,
