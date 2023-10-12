@@ -15,15 +15,26 @@ export default function Council() {
 
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
+  const [curBlock, setCurBlock] = useState(0);
 
   useEffect(() => {
+    getCurrentBlockNumber();
     if (!council) return;
     setStartBlock(council.electedAt.number);
 
     if (council.endedAt) {
       setEndBlock(council.endedAt.number);
+    } else {
+      setEndBlock(curBlock);
     }
-  }, [council]);
+  }, [council, api]);
+
+  const getCurrentBlockNumber = async () => {
+    if (!api) return;
+    const blockHeader = await api.rpc.chain.getHeader();
+    const currentBlockNumber = blockHeader.number.toNumber();
+    setCurBlock(currentBlockNumber);
+  }
 
   const generate = useCallback(async () => {
     if (!api) return;
