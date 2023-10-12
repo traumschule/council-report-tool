@@ -1,0 +1,23 @@
+query GetStorageDataObjects(
+  $offset: Int
+  $limit: Int
+  $where: StorageDataObjectWhereInput
+) {
+  storageDataObjects(
+    limit: $limit
+    offset: $offset
+    where: $where
+    orderBy:createdAt_ASC
+  ) {
+    id
+    createdAt
+    size
+  }
+}
+
+query GetStorageDataObjectsCount($where: StorageDataObjectWhereInput) {
+  storageDataObjectsConnection(where: $where) { 
+    totalCount
+  }
+}
+
