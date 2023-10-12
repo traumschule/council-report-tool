@@ -46,14 +46,11 @@ export async function generateReport1(api: ApiPromise, blockNumber: number) {
     hash: blockHash,
     timestamp: blockTimestamp,
   };
-  const endBalance = toJoy(await getBalance(api, MEXC_WALLET, blockHash));
-  console.log("endBalance ", endBalance);
   const {
     videosConnection: { totalCount: videoCount },
   } = await GetVideoCount({
     where: { createdInBlock_lte: blockNumber },
   });
-  await getStorageStatusByBlock(blockTimestamp, blockTimestamp)
   const {
     channelsConnection: { totalCount: channelCount },
   } = await GetChannelsCount({
