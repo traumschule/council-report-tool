@@ -172,33 +172,33 @@ export async function generateReport2(
     ((startIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const inflationChange = endInflation - startInflation;
-  const blocksEvents = await getEvent(api, startBlockNumber, endBlockNumber);
-  for (let [, blockEvents] of blocksEvents) {
-    blockEvents.map((event) => {
-      if (event.section == 'balances') {
-        if (event.method == 'BalanceSet') {
-          let amount = event.data[1] as Balance;
-          mint += toJoy(amount);
-        }
-        if (event.method == 'Transfer') {
-          let amount = event.data[2] as Balance;
-          let receiver = event.data[1] as AccountId;
-          if (receiver.toString() == BURN_ADDRESS) {
-            burn += toJoy(amount);
-          }
-        }
-      }
-      if (event.section == 'staking' && event.method == 'Reward') {
-        let amount = event.data[1] as Balance;
-        reward += toJoy(amount);
-      }
-    })
-  }
+  // const blocksEvents = await getEvent(api, startBlockNumber, endBlockNumber);
+  // for (let [, blockEvents] of blocksEvents) {
+  //   blockEvents.map((event) => {
+  //     if (event.section == 'balances') {
+  //       if (event.method == 'BalanceSet') {
+  //         let amount = event.data[1] as Balance;
+  //         mint += toJoy(amount);
+  //       }
+  //       if (event.method == 'Transfer') {
+  //         let amount = event.data[2] as Balance;
+  //         let receiver = event.data[1] as AccountId;
+  //         if (receiver.toString() == BURN_ADDRESS) {
+  //           burn += toJoy(amount);
+  //         }
+  //       }
+  //     }
+  //     if (event.section == 'staking' && event.method == 'Reward') {
+  //       let amount = event.data[1] as Balance;
+  //       reward += toJoy(amount);
+  //     }
+  //   })
+  // }
   // TODO mited/burned
   const supply = {
     inflationChange,
-    TokensMinted: mint,
-    TokensBurned: burn,
+    // TokensMinted: mint,
+    // TokensBurned: burn,
   };
 
   // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
@@ -231,7 +231,7 @@ export async function generateReport2(
     wgSpending,
     fundingProposals,
     creatorPayoutRewards,
-    validatorRewards: reward,
+    // validatorRewards: reward,
     totalDaoSepnding: 0,
   };
   const totalDaoSepnding = Object.values(daoSpending).reduce(
