@@ -411,8 +411,8 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
   })
   const { totalCount } = storageDataObjectsConnection;
   let loop = Math.ceil(totalCount / defalultOffset);
-  let startStorage = 0;
-  let endStorage = 0;
+  let startStorage = 1;
+  let endStorage = 1;
   // for (let i = 0; i < loop; i++) {
   //   const { storageDataObjects } = await GetStorageDataObjects({
   //     where: {
