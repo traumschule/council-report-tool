@@ -31,6 +31,14 @@ fragment NftBoughtEventField on NftBoughtEvent {
   price
 }
 
+query GetAuctionsTotalCount(
+  $where:AuctionWhereInput
+) {
+  auctionsConnection(where:$where){
+    totalCount
+  }
+}
+
 query GetAuctions(
   $offset: Int
   $limit: Int

@@ -24,7 +24,6 @@ import {
   getSdk,
   getWorkingGroups,
   getStorageStatusByBlock,
-  getStorageBuget,
   getEvent
 
 } from "@/api";
@@ -48,7 +47,6 @@ export async function generateReport1(api: ApiPromise, blockNumber: number) {
     hash: blockHash,
     timestamp: blockTimestamp,
   };
-  await getStorageBuget(blockTimestamp);
   const {
     videosConnection: { totalCount: videoCount },
   } = await GetVideoCount({

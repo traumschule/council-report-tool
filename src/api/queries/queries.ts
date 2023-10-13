@@ -35,7 +35,6 @@ export const getStorageBuget = async (start: Date) => {
   storageBuckets.map((d) => {
     size += parseInt(d.dataObjectsSize);
   })
-  console.log("storageBuget size", size);
 }
 
 export const getElectedCouncilById = async (
@@ -237,8 +236,6 @@ export const getWGBudgetRefills = async (start: Date, end: Date) => {
     refills[id] =
       toJoy(new BN(amount)) + (isNaN(refills[id]) ? 0 : refills[id]);
   }
-  console.log(proposals);
-  console.log(refills);
   return refills;
 };
 
@@ -463,9 +460,12 @@ export const getMediaStatus = async (start: Date, end: Date) => {
 };
 
 export const getVideoNftStatus = async (start: Date, end: Date) => {
-  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions } =
+  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions, GetAuctionsTotalCount } =
     getSdk(client);
-
+  const defaultLimit = 100;
+  let loop = 0;
+  let totalVolume = BN_ZERO;
+  let auctionVolume = BN_ZERO;
   const {
     nftIssuedEventsConnection: { totalCount: startCount },
   } = await GetNftIssuedCount({
@@ -479,41 +479,46 @@ export const getVideoNftStatus = async (start: Date, end: Date) => {
   const growthCount = endCount - startCount;
   const growthPercent = (growthCount / startCount) * 100;
 
-  // calc nft sale volume
-  const { nftBoughtEvents } = await GetNftSales({
-    where: { createdAt_gte: start, createdAt_lte: end },
-  });
-
-  let totalVolume = BN_ZERO;
-  totalVolume = nftBoughtEvents.reduce(
-    (total, { price }) => total.add(new BN(price)),
-    BN_ZERO
-  );
-
-  const { auctions } = await GetAuctions({
-    where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true },
-  });
-
-  const auctionVolume = auctions.reduce(
-    (total, { topBid }) => total.add(new BN(topBid ? topBid.amount : 0)),
-    BN_ZERO
-  );
-
-  totalVolume = totalVolume.add(auctionVolume);
-
   const {
-    nftBoughtEventsConnection: { totalCount },
+    nftBoughtEventsConnection: { totalCount: boughtEventTotalCount },
   } = await GetNftSaleCount({
     where: { createdAt_gte: start, createdAt_lte: end },
   });
-
+  const { auctionsConnection: { totalCount: auctionTotalCount } } = await GetAuctionsTotalCount({
+    where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true }
+  });
+  loop = Math.ceil(boughtEventTotalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { nftBoughtEvents } = await GetNftSales({
+      where: { createdAt_gte: start, createdAt_lte: end },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    totalVolume = nftBoughtEvents.reduce(
+      (total, { price }) => total.add(new BN(price)),
+      BN_ZERO
+    );
+  }
+  loop = Math.ceil(auctionTotalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { auctions } = await GetAuctions({
+      where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    auctionVolume = auctions.reduce(
+      (total, { topBid }) => total.add(new BN(topBid ? topBid.amount : 0)),
+      BN_ZERO
+    );
+  }
+  totalVolume = totalVolume.add(auctionVolume);
   return {
     startCount,
     endCount,
     growthCount,
     growthPercent,
     saleVolume: toJoy(totalVolume),
-    saleQuantity: totalCount,
+    saleQuantity: boughtEventTotalCount,
   };
 };
 

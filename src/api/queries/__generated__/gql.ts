@@ -37429,6 +37429,13 @@ export type GetNftSalesQuery = { __typename: 'Query', nftBoughtEvents: Array<{ _
 
 export type NftBoughtEventFieldFragment = { __typename: 'NftBoughtEvent', videoId: string, memberId: string, price: string };
 
+export type GetAuctionsTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<AuctionWhereInput>;
+}>;
+
+
+export type GetAuctionsTotalCountQuery = { __typename: 'Query', auctionsConnection: { __typename: 'AuctionConnection', totalCount: number } };
+
 export type GetAuctionsQueryVariables = Exact<{
   offset?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -38492,6 +38499,13 @@ export const GetNftSalesDocument = gql`
   }
 }
     ${NftBoughtEventFieldFragmentDoc}`;
+export const GetAuctionsTotalCountDocument = gql`
+    query GetAuctionsTotalCount($where: AuctionWhereInput) {
+  auctionsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const GetAuctionsDocument = gql`
     query GetAuctions($offset: Int, $limit: Int, $where: AuctionWhereInput, $orderBy: [AuctionOrderByInput!]) {
   auctions(offset: $offset, limit: $limit, where: $where, orderBy: $orderBy) {
@@ -38974,6 +38988,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetNftSales(variables?: GetNftSalesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftSalesQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetNftSalesQuery>(GetNftSalesDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNftSales', 'query');
+    },
+    GetAuctionsTotalCount(variables?: GetAuctionsTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetAuctionsTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetAuctionsTotalCountQuery>(GetAuctionsTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetAuctionsTotalCount', 'query');
     },
     GetAuctions(variables?: GetAuctionsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetAuctionsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetAuctionsQuery>(GetAuctionsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetAuctions', 'query');

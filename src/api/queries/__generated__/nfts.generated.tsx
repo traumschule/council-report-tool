@@ -29,6 +29,13 @@ export type GetNftSalesQuery = { __typename: 'Query', nftBoughtEvents: Array<{ _
 
 export type NftBoughtEventFieldFragment = { __typename: 'NftBoughtEvent', videoId: string, memberId: string, price: string };
 
+export type GetAuctionsTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.AuctionWhereInput>;
+}>;
+
+
+export type GetAuctionsTotalCountQuery = { __typename: 'Query', auctionsConnection: { __typename: 'AuctionConnection', totalCount: number } };
+
 export type GetAuctionsQueryVariables = Types.Exact<{
   offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
@@ -169,6 +176,41 @@ export function useGetNftSalesLazyQuery(baseOptions?: Apollo.LazyQueryHookOption
 export type GetNftSalesQueryHookResult = ReturnType<typeof useGetNftSalesQuery>;
 export type GetNftSalesLazyQueryHookResult = ReturnType<typeof useGetNftSalesLazyQuery>;
 export type GetNftSalesQueryResult = Apollo.QueryResult<GetNftSalesQuery, GetNftSalesQueryVariables>;
+export const GetAuctionsTotalCountDocument = gql`
+    query GetAuctionsTotalCount($where: AuctionWhereInput) {
+  auctionsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetAuctionsTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetAuctionsTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAuctionsTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAuctionsTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetAuctionsTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetAuctionsTotalCountQuery, GetAuctionsTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetAuctionsTotalCountQuery, GetAuctionsTotalCountQueryVariables>(GetAuctionsTotalCountDocument, options);
+      }
+export function useGetAuctionsTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetAuctionsTotalCountQuery, GetAuctionsTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetAuctionsTotalCountQuery, GetAuctionsTotalCountQueryVariables>(GetAuctionsTotalCountDocument, options);
+        }
+export type GetAuctionsTotalCountQueryHookResult = ReturnType<typeof useGetAuctionsTotalCountQuery>;
+export type GetAuctionsTotalCountLazyQueryHookResult = ReturnType<typeof useGetAuctionsTotalCountLazyQuery>;
+export type GetAuctionsTotalCountQueryResult = Apollo.QueryResult<GetAuctionsTotalCountQuery, GetAuctionsTotalCountQueryVariables>;
 export const GetAuctionsDocument = gql`
     query GetAuctions($offset: Int, $limit: Int, $where: AuctionWhereInput, $orderBy: [AuctionOrderByInput!]) {
   auctions(offset: $offset, limit: $limit, where: $where, orderBy: $orderBy) {
