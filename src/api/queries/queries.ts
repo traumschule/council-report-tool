@@ -381,8 +381,6 @@ export const getChannelChartData = async (start: Date, end: Date) => {
   return data;
 };
 
-// TODO
-
 export const getStorageStatus = async (start: Date, end: Date) => {
   const { GetStorageDataObjects } = getSdk(client);
   const { storageDataObjects } = await GetStorageDataObjects({
@@ -410,25 +408,25 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
   let loop = Math.ceil(totalCount / defalultOffset);
   let startStorage = 1;
   let endStorage = 1;
-  // for (let i = 0; i < loop; i++) {
-  //   const { storageDataObjects } = await GetStorageDataObjects({
-  //     where: {
-  //       createdAt_lte: end
-  //     },
-  //     limit: defalultOffset,
-  //     offset: defalultOffset * i
-  //   });
-  //   storageDataObjects.map((storage) => {
-  //     if (start) {
-  //       let storageCreateAt = new Date(storage.createdAt);
+  for (let i = 0; i < loop; i++) {
+    const { storageDataObjects } = await GetStorageDataObjects({
+      where: {
+        createdAt_lte: end
+      },
+      limit: defalultOffset,
+      offset: defalultOffset * i
+    });
+    storageDataObjects.map((storage) => {
+      if (start) {
+        let storageCreateAt = new Date(storage.createdAt);
 
-  //       if (storageCreateAt <= start) {
-  //         startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-  //       }
-  //     }
-  //     endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-  //   })
-  // }
+        if (storageCreateAt <= start) {
+          startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+        }
+      }
+      endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+    })
+  }
   return {
     startStorage: decimalAdjust(startStorage),
     endStorage: decimalAdjust(endStorage)

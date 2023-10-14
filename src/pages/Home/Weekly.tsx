@@ -11,22 +11,36 @@ export default function Weekly() {
 
   const [report2, setReport2] = useState({});
   const [loading, setLoading] = useState(false);
-
+  const [storageFlag, setStorageFlag] = useState(false);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
 
-  const generate = useCallback(async () => {
+  // const generate = useCallback(async () => {
+  //   if (!api) return;
+  //   setLoading(true);
+
+  //   const [report2] = await Promise.all([
+  //     generateReport2(api, startBlock, endBlock),
+  //   ]);
+
+  //   setReport2(report2);
+
+  //   setLoading(false);
+  // }, [api, startBlock, endBlock]);
+
+  const generate = async () => {
     if (!api) return;
     setLoading(true);
-
     const [report2] = await Promise.all([
-      generateReport2(api, startBlock, endBlock),
+      generateReport2(api, storageFlag, startBlock, endBlock),
     ]);
-
     setReport2(report2);
-
     setLoading(false);
-  }, [api, startBlock, endBlock]);
+  }
+
+  const storageFlagHandler = () => {
+    setStorageFlag(!storageFlag);
+  }
 
   return (
     <div className="rounded-sm p-2 mt-4 border-2 border-[#fff]">
@@ -44,6 +58,8 @@ export default function Weekly() {
           value={endBlock}
           onChange={(e) => setEndBlock(parseInt(e.target.value, 10))}
         />
+        <input type="checkbox" checked={storageFlag} onChange={storageFlagHandler} />
+        <label>Storage Status</label>
         <button
           className="btn mr-0 my-5 mx-4"
           onClick={generate}

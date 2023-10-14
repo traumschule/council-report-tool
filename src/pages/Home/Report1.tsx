@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ReactJson from "react-json-view";
-
 import { useRpc } from "@/hooks";
 import { generateReport1 } from "@/helpers";
 import { getEvent } from "@/api/rpc/getEvent";
@@ -14,6 +13,7 @@ export default function Report1() {
     undefined
   );
   const [block, setBlock] = useState(0);
+  const [storage, setStorage] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,14 +25,29 @@ export default function Report1() {
     })();
   }, [api]);
 
-  const generate = useCallback(async () => {
+  // const generate = useCallback(async () => {
+  //   if (!api) return;
+  //   setLoading(true);
+  //   const [report1] = await Promise.all([generateReport1(api, block, storage)]);
+  //   setReport1(report1);
+  //   setLoading(false);
+  // }, [api, block]);
+
+  const generate = async () => {
     if (!api) return;
     setLoading(true);
-    const [report1] = await Promise.all([generateReport1(api, block)]);
+    const [report1] = await Promise.all([generateReport1(api, block, storage)]);
     setReport1(report1);
-
     setLoading(false);
-  }, [api, block]);
+  }
+
+  const storageHandler = () => {
+    setStorage(!storage);
+  }
+
+  const onTest = () => {
+    console.log("test", storage)
+  }
 
   return (
     <div className="prose max-w-3xl m-auto mt-4 rounded-sm p-2 border-2 border-[#fff]">
@@ -41,19 +56,25 @@ export default function Report1() {
         <div>
           Current block number: {currentBlock ? currentBlock : "Loading..."}
         </div>
-        <label>Block:</label>
-        <input
-          type="number"
-          value={block}
-          onChange={(e) => setBlock(parseInt(e.target.value, 10))}
-        />
-        <button
-          className="btn mr-0 my-5 mx-4"
-          onClick={generate}
-          disabled={!api || loading}
-        >
-          {loading ? "Generating..." : "Generate report"}
-        </button>
+        <div >
+          <label onClick={onTest} >Block:</label>
+          <input
+            type="number"
+            value={block}
+            onChange={(e) => setBlock(parseInt(e.target.value, 10))}
+          />
+          <input type="checkbox" className="pr-3" checked={storage} onClick={storageHandler} />
+          <label>Storage Status</label>
+
+          <button
+            className="btn mr-0 my-5 mx-4"
+            onClick={generate}
+            disabled={!api || loading}
+          >
+            {loading ? "Generating..." : "Generate report"}
+          </button>
+        </div>
+
       </div>
 
       <ReactJson src={report1} theme="monokai" collapsed />

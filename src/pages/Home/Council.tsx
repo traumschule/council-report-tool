@@ -12,6 +12,7 @@ export default function Council() {
 
   const [report4, setReport4] = useState({});
   const [loading, setLoading] = useState(false);
+  const [storageFlag, setStorageFlag] = useState(false);
 
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
@@ -36,17 +37,31 @@ export default function Council() {
     setCurBlock(currentBlockNumber);
   }
 
-  const generate = useCallback(async () => {
+  // const generate = useCallback(async () => {
+  // if (!api) return;
+  // setLoading(true);
+
+  // const [report4] = await Promise.all([
+  //   generateReport4(api, startBlock, endBlock, storageFlag),
+  // ]);
+
+  // setReport4(report4);
+  // setLoading(false);
+  // }, [api, startBlock, endBlock]);
+
+  const generate = async () => {
     if (!api) return;
     setLoading(true);
-
     const [report4] = await Promise.all([
-      generateReport4(api, startBlock, endBlock),
+      generateReport4(api, startBlock, endBlock, storageFlag),
     ]);
-
     setReport4(report4);
     setLoading(false);
-  }, [api, startBlock, endBlock]);
+  }
+
+  const storageFlagHandler = () => {
+    setStorageFlag(!storageFlag);
+  }
 
   return (
     <div className="prose max-w-3xl m-auto mt-4">
@@ -65,7 +80,9 @@ export default function Council() {
             type="number"
             value={endBlock}
             onChange={(e) => setEndBlock(parseInt(e.target.value, 10))}
-          />
+          />'
+          <input type="checkbox" checked={storageFlag} onChange={storageFlagHandler} />
+          <label>Storage Status</label>
           <button
             className="btn mr-0 my-5 mx-4"
             onClick={generate}

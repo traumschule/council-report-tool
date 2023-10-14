@@ -35,7 +35,7 @@ import { decimalAdjust } from "./utils";
 
 const INITIAL_SUPPLY = 1_000_000_000;
 
-export async function generateReport1(api: ApiPromise, blockNumber: number) {
+export async function generateReport1(api: ApiPromise, blockNumber: number, storageFlag: boolean) {
   const { GetVideoCount, GetChannelsCount, GetNftIssuedCount, GetMembers } =
     getSdk(graphQLClient);
   const blockHash = await getBlockHash(api, blockNumber);
@@ -65,14 +65,17 @@ export async function generateReport1(api: ApiPromise, blockNumber: number) {
   } = await GetNftIssuedCount({
     where: { createdAt_lte: blockTimestamp },
   });
-  const { endStorage } = await getStorageStatusByBlock(blockTimestamp);
-  const content = {
+  let content = {
     videoCount,
     channelCount,
     nonEmptyChannelCount: endCount,
     nftCount,
-    totalStorage: endStorage
+    totalStorage: 0
   };
+  if (storageFlag) {
+    const { endStorage } = await getStorageStatusByBlock(blockTimestamp);
+    content.totalStorage = endStorage
+  }
 
   const totalSupply = toJoy(await getTotalSupply(api, blockHash));
   const currentTotalSupply = await getOfficialTotalSupply();
@@ -114,22 +117,25 @@ export async function generateReport1(api: ApiPromise, blockNumber: number) {
   };
 }
 
-// weekly report
 export async function generateReport2(
   api: ApiPromise,
+  storageFlag: boolean,
   startBlockNumber: number,
-  endBlockNumber?: number
+  endBlockNumber?: number,
 ) {
   // 1. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#general-1
+  let storageStatus = {
+    startBlock: 0,
+    endBlock: 0,
+    growthQty: 0,
+    growth: 0
+  };
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
   );
 
   // const blockHeader = await api.rpc.chain.getBlock(startBlockHash);
-  let mint = 0;
-  let burn = 0;
-  let reward = 0;
   const startBlock = {
     number: startBlockNumber,
     hash: startBlockHash,
@@ -288,10 +294,14 @@ export async function generateReport2(
     startBlockTimestamp,
     endBlockTimestamp
   );
+  if (storageFlag) {
+    const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
+    storageStatus.startBlock = startStorage;
+    storageStatus.endBlock = endStorage;
+    storageStatus.growth = decimalAdjust(endStorage - startStorage);
+    storageStatus.growth = decimalAdjust((endStorage / startStorage - 1));
+  }
 
-  const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
-  const storageGrowthQty = decimalAdjust(endStorage - startStorage);
-  const storageGrowth = decimalAdjust((endStorage / startStorage - 1));
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
   const { startCount, endCount } = await getChannelStatus(
     endBlockNumber,
@@ -376,12 +386,7 @@ export async function generateReport2(
     nonEmptyChannelStatus,
     videoNftStatus,
     membershipStatus,
-    storageStatus: {
-      startBlock: startStorage,
-      endBlock: endStorage,
-      growthQty: storageGrowthQty,
-      growth: storageGrowth
-    },
+    storageStatus,
     proposals: {
       proposals,
       executedProposals,
@@ -395,8 +400,13 @@ export async function generateReport2(
 export async function generateReport4(
   api: ApiPromise,
   startBlockNumber: number,
-  endBlockNumber: number
+  endBlockNumber: number,
+  storageFlag: boolean
 ) {
+  let storageStatus = {
+    totalStorageUsed: 0,
+    storageChanged: 0
+  };
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
@@ -418,8 +428,11 @@ export async function generateReport4(
   }
 
   const video = await getVideoStatus(startBlockTimestamp, endBlockTimestamp);
-
-  const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
+  if (storageFlag) {
+    const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
+    storageStatus.totalStorageUsed = endStorage;
+    storageStatus.storageChanged = decimalAdjust(endStorage - startStorage);
+  }
   const forum = await getForumStatus(startBlockTimestamp, endBlockTimestamp);
 
   const proposals = await getProposals(startBlockTimestamp, endBlockTimestamp);
@@ -486,15 +499,11 @@ export async function generateReport4(
   )) {
     wgBudgets[spending[0] as GroupIdName]["spending"] = spending[1];
   }
-  // TODO council & wg available budget
 
   return {
     nonEmptyChannel,
     video,
-    storage: {
-      totalStorageUsed: endStorage,
-      storageChanged: decimalAdjust(endStorage - startStorage),
-    },
+    storage: storageStatus,
     councilBudget,
     wgBudgets,
     forum,
