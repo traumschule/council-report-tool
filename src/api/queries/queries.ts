@@ -803,3 +803,24 @@ export const getStorageChartData = async (start: Date, end: Date) => {
 
   return data;
 };
+
+export const getFilledWorkers = async () => {
+  const { getOpeningFilled, getOpeningFilledTotalCount } = getSdk(client);
+  const { openingFilledEventsConnection: { totalCount } } = await getOpeningFilledTotalCount();
+  const { openingFilledEvents } = await getOpeningFilled({ limit: totalCount })
+  return openingFilledEvents
+}
+
+export const getTerminateWorkers = async () => {
+  const { getTerminatedWorker, getTerminatedWorkerTotalCount } = getSdk(client);
+  const { terminatedWorkerEventsConnection: { totalCount } } = await getTerminatedWorkerTotalCount();
+  const { terminatedWorkerEvents } = await getTerminatedWorker({ limit: totalCount });
+  return terminatedWorkerEvents;
+}
+
+export const getExitedWorkers = async () => {
+  const { getWorkerExited, getWorkerExitedTotalCount } = getSdk(client);
+  const { workerExitedEventsConnection: { totalCount } } = await getWorkerExitedTotalCount();
+  const { workerExitedEvents } = await getWorkerExited({ limit: totalCount });
+  return workerExitedEvents;
+}

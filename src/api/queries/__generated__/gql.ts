@@ -37554,6 +37554,54 @@ export type GetNonEmptyChannelQueryVariables = Exact<{
 
 export type GetNonEmptyChannelQuery = { __typename: 'Query', videos: Array<{ __typename: 'Video', id: string, channelId: string, createdInBlock: number }> };
 
+export type GetTerminatedWorkerQueryVariables = Exact<{
+  where?: InputMaybe<TerminatedWorkerEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetTerminatedWorkerQuery = { __typename: 'Query', terminatedWorkerEvents: Array<{ __typename: 'TerminatedWorkerEvent', groupId: string, workerId: string, createdAt: any, worker: { __typename: 'Worker', membershipId: string } }> };
+
+export type GetTerminatedWorkerTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<TerminatedWorkerEventWhereInput>;
+}>;
+
+
+export type GetTerminatedWorkerTotalCountQuery = { __typename: 'Query', terminatedWorkerEventsConnection: { __typename: 'TerminatedWorkerEventConnection', totalCount: number } };
+
+export type GetWorkerExitedQueryVariables = Exact<{
+  where?: InputMaybe<WorkerExitedEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetWorkerExitedQuery = { __typename: 'Query', workerExitedEvents: Array<{ __typename: 'WorkerExitedEvent', createdAt: any, groupId: string, workerId: string, worker: { __typename: 'Worker', membershipId: string } }> };
+
+export type GetWorkerExitedTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<WorkerExitedEventWhereInput>;
+}>;
+
+
+export type GetWorkerExitedTotalCountQuery = { __typename: 'Query', workerExitedEventsConnection: { __typename: 'WorkerExitedEventConnection', totalCount: number } };
+
+export type GetOpeningFilledQueryVariables = Exact<{
+  where?: InputMaybe<OpeningFilledEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetOpeningFilledQuery = { __typename: 'Query', openingFilledEvents: Array<{ __typename: 'OpeningFilledEvent', createdAt: any, groupId: string, workersHired: Array<{ __typename: 'Worker', membershipId: string }> }> };
+
+export type GetOpeningFilledTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<OpeningFilledEventWhereInput>;
+}>;
+
+
+export type GetOpeningFilledTotalCountQuery = { __typename: 'Query', openingFilledEventsConnection: { __typename: 'OpeningFilledEventConnection', totalCount: number } };
+
 export type WorkingGroupMetadataFieldsFragment = { __typename: 'WorkingGroupMetadata', about?: string | null, description?: string | null, status?: string | null, statusMessage?: string | null };
 
 export type WorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } };
@@ -38655,6 +38703,64 @@ export const GetNonEmptyChannelDocument = gql`
   }
 }
     `;
+export const GetTerminatedWorkerDocument = gql`
+    query getTerminatedWorker($where: TerminatedWorkerEventWhereInput, $limit: Int, $offset: Int) {
+  terminatedWorkerEvents(where: $where, limit: $limit, offset: $offset) {
+    groupId
+    workerId
+    createdAt
+    __typename
+    worker {
+      membershipId
+    }
+  }
+}
+    `;
+export const GetTerminatedWorkerTotalCountDocument = gql`
+    query getTerminatedWorkerTotalCount($where: TerminatedWorkerEventWhereInput) {
+  terminatedWorkerEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+export const GetWorkerExitedDocument = gql`
+    query getWorkerExited($where: WorkerExitedEventWhereInput, $limit: Int, $offset: Int) {
+  workerExitedEvents(where: $where, limit: $limit, offset: $offset) {
+    createdAt
+    groupId
+    workerId
+    __typename
+    worker {
+      membershipId
+    }
+  }
+}
+    `;
+export const GetWorkerExitedTotalCountDocument = gql`
+    query getWorkerExitedTotalCount($where: WorkerExitedEventWhereInput) {
+  workerExitedEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+export const GetOpeningFilledDocument = gql`
+    query getOpeningFilled($where: OpeningFilledEventWhereInput, $limit: Int, $offset: Int) {
+  openingFilledEvents(where: $where, limit: $limit, offset: $offset) {
+    createdAt
+    groupId
+    workersHired {
+      membershipId
+    }
+  }
+}
+    `;
+export const GetOpeningFilledTotalCountDocument = gql`
+    query getOpeningFilledTotalCount($where: OpeningFilledEventWhereInput) {
+  openingFilledEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const GetWorkingGroupsDocument = gql`
     query GetWorkingGroups($where: WorkingGroupWhereInput, $orderBy: [WorkingGroupOrderByInput!], $offset: Int, $limit: Int) {
   workingGroups(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
@@ -39033,6 +39139,24 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetNonEmptyChannel(variables?: GetNonEmptyChannelQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNonEmptyChannelQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetNonEmptyChannelQuery>(GetNonEmptyChannelDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNonEmptyChannel', 'query');
+    },
+    getTerminatedWorker(variables?: GetTerminatedWorkerQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetTerminatedWorkerQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetTerminatedWorkerQuery>(GetTerminatedWorkerDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getTerminatedWorker', 'query');
+    },
+    getTerminatedWorkerTotalCount(variables?: GetTerminatedWorkerTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetTerminatedWorkerTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetTerminatedWorkerTotalCountQuery>(GetTerminatedWorkerTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getTerminatedWorkerTotalCount', 'query');
+    },
+    getWorkerExited(variables?: GetWorkerExitedQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkerExitedQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetWorkerExitedQuery>(GetWorkerExitedDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getWorkerExited', 'query');
+    },
+    getWorkerExitedTotalCount(variables?: GetWorkerExitedTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkerExitedTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetWorkerExitedTotalCountQuery>(GetWorkerExitedTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getWorkerExitedTotalCount', 'query');
+    },
+    getOpeningFilled(variables?: GetOpeningFilledQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetOpeningFilledQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetOpeningFilledQuery>(GetOpeningFilledDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getOpeningFilled', 'query');
+    },
+    getOpeningFilledTotalCount(variables?: GetOpeningFilledTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetOpeningFilledTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetOpeningFilledTotalCountQuery>(GetOpeningFilledTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getOpeningFilledTotalCount', 'query');
     },
     GetWorkingGroups(variables?: GetWorkingGroupsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkingGroupsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetWorkingGroupsQuery>(GetWorkingGroupsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkingGroups', 'query');
