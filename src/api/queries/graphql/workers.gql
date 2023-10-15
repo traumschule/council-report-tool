@@ -1,0 +1,54 @@
+
+query getTerminatedWorker($where:TerminatedWorkerEventWhereInput,$limit:Int,$offset:Int) {
+    terminatedWorkerEvents(where:$where limit:$limit offset:$offset) {
+        groupId
+        workerId
+        createdAt
+        __typename
+        worker{
+            membershipId
+     
+        }
+  }	
+}
+
+query getTerminatedWorkerTotalCount($where:TerminatedWorkerEventWhereInput) {
+    terminatedWorkerEventsConnection(where:$where ) {
+     	totalCount
+    }
+}	
+
+
+query getWorkerExited($where:WorkerExitedEventWhereInput,$limit:Int,$offset:Int) {
+    workerExitedEvents(where:$where limit:$limit offset:$offset) {
+        createdAt
+        groupId
+        workerId
+        __typename
+        worker{
+            membershipId
+        }
+  }	
+}
+
+query getWorkerExitedTotalCount($where:WorkerExitedEventWhereInput) {
+    workerExitedEventsConnection(where:$where) {
+        totalCount
+  }	
+}
+
+query getOpeningFilled($where:OpeningFilledEventWhereInput,$limit:Int,$offset:Int){
+    openingFilledEvents(where:$where limit:$limit offset:$offset){
+        createdAt
+        groupId
+        workersHired{
+            membershipId
+        }
+  }
+}
+
+query getOpeningFilledTotalCount($where:OpeningFilledEventWhereInput){
+    openingFilledEventsConnection(where:$where){
+        totalCount
+    }
+}
