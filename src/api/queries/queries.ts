@@ -154,7 +154,6 @@ export const getChannelStatus = async (endBlockNumber: number, startDate?: Date)
 export const getChannelChartData = async (endBlock: number, startDate: Date) => {
   const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
   const defaultLimit = 1000;
-  console.log("startDate", startDate);
   let channelCount: number = 0;
   const totalChannels: Array<ChannelData> = [];
   const channelChart: Array<DailyData> = [];
@@ -307,7 +306,6 @@ export const getVideoNftChartData = async (start: Date, end: Date) => {
     });
     prevCount = totalCount;
   }
-
   return data;
 };
 
@@ -374,6 +372,167 @@ export const getVideoChartData = async (start: Date, end: Date) => {
   return data;
 };
 
+// Forum
+
+export const getForumCategoryStatus = async (start: Date, end: Date) => {
+  const { GetForumCategoriesCount } = getSdk(client);
+
+  const {
+    forumCategoriesConnection: { totalCount: startCount },
+  } = await GetForumCategoriesCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    forumCategoriesConnection: { totalCount: endCount },
+  } = await GetForumCategoriesCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+  };
+};
+
+export const getForumThreadStatus = async (start: Date, end: Date) => {
+  const { GetForumThreadsCount } = getSdk(client);
+
+  const {
+    forumThreadsConnection: { totalCount: startCount },
+  } = await GetForumThreadsCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    forumThreadsConnection: { totalCount: endCount },
+  } = await GetForumThreadsCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+  };
+};
+
+export const getForumPostStatus = async (start: Date, end: Date) => {
+  const { GetForumPostsCount } = getSdk(client);
+
+  const {
+    forumPostsConnection: { totalCount: startCount },
+  } = await GetForumPostsCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    forumPostsConnection: { totalCount: endCount },
+  } = await GetForumPostsCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+  };
+};
+
+export const getForumStatus = async (start: Date, end: Date) => {
+  const [category, thread, post] = await Promise.all([
+    getForumCategoryStatus(start, end),
+    getForumThreadStatus(start, end),
+    getForumPostStatus(start, end),
+  ]);
+
+  return { category, thread, post };
+};
+
+// membership
+
+export const getMembershipCount = async (date: Date) => {
+  const { GetMembersCount } = getSdk(client);
+
+  const {
+    membershipsConnection: { totalCount },
+  } = await GetMembersCount({
+    where: { createdAt_lte: date },
+  });
+  return totalCount;
+};
+
+
+export const getMembershipStatus = async (start: Date, end: Date) => {
+  const { GetMembersCount } = getSdk(client);
+
+  const {
+    membershipsConnection: { totalCount: startCount },
+  } = await GetMembersCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    membershipsConnection: { totalCount: endCount },
+  } = await GetMembersCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+  };
+};
+
+export const getMembershipChartData = async (start: Date, end: Date) => {
+  const { GetMembersCount } = getSdk(client);
+
+  const startDate = new Date(
+    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
+  );
+  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
+
+  // iterate over days
+  const data = [];
+
+  const {
+    membershipsConnection: { totalCount },
+  } = await GetMembersCount({
+    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
+  });
+  let prevCount = totalCount;
+  for (
+    let date = startDate;
+    date <= endDate;
+    date = new Date(date.getTime() + 24 * 3600 * 1000)
+  ) {
+    const {
+      membershipsConnection: { totalCount },
+    } = await GetMembersCount({
+      where: { createdAt_lte: date.toISOString() },
+    });
+    data.push({
+      date: date,
+      count: totalCount - prevCount,
+    });
+    prevCount = totalCount;
+  }
+
+  return data;
+};
+
+//
+
 export const getElectedCouncilById = async (
   id: string
 ): Promise<ElectedCouncil> => {
@@ -388,16 +547,6 @@ export const getElectedCouncilById = async (
   return asElectedCouncil(council.electedCouncils[0]);
 };
 
-export const getMembershipCount = async (date: Date) => {
-  const { GetMembersCount } = getSdk(client);
-
-  const {
-    membershipsConnection: { totalCount },
-  } = await GetMembersCount({
-    where: { createdAt_lte: date },
-  });
-  return totalCount;
-};
 
 export const getCurrentWorkingGroups = async (): Promise<WorkingGroup[]> => {
   const { GetWorkingGroups } = getSdk(client);
@@ -576,73 +725,6 @@ export const getWGBudgetRefills = async (start: Date, end: Date) => {
   return refills;
 };
 
-//
-
-
-
-
-
-export const getMembershipStatus = async (start: Date, end: Date) => {
-  const { GetMembersCount } = getSdk(client);
-
-  const {
-    membershipsConnection: { totalCount: startCount },
-  } = await GetMembersCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    membershipsConnection: { totalCount: endCount },
-  } = await GetMembersCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
-
-export const getMembershipChartData = async (start: Date, end: Date) => {
-  const { GetMembersCount } = getSdk(client);
-
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    membershipsConnection: { totalCount },
-  } = await GetMembersCount({
-    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
-  });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      membershipsConnection: { totalCount },
-    } = await GetMembersCount({
-      where: { createdAt_lte: date.toISOString() },
-    });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
-    });
-    prevCount = totalCount;
-  }
-
-  return data;
-};
-
 export const getProposals = async (
   start: Date,
   end: Date
@@ -658,87 +740,6 @@ export const getProposals = async (
   return proposals.map(asProposal);
 };
 
-export const getForumCategoryStatus = async (start: Date, end: Date) => {
-  const { GetForumCategoriesCount } = getSdk(client);
-
-  const {
-    forumCategoriesConnection: { totalCount: startCount },
-  } = await GetForumCategoriesCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    forumCategoriesConnection: { totalCount: endCount },
-  } = await GetForumCategoriesCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
-
-export const getForumThreadStatus = async (start: Date, end: Date) => {
-  const { GetForumThreadsCount } = getSdk(client);
-
-  const {
-    forumThreadsConnection: { totalCount: startCount },
-  } = await GetForumThreadsCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    forumThreadsConnection: { totalCount: endCount },
-  } = await GetForumThreadsCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
-
-export const getForumPostStatus = async (start: Date, end: Date) => {
-  const { GetForumPostsCount } = getSdk(client);
-
-  const {
-    forumPostsConnection: { totalCount: startCount },
-  } = await GetForumPostsCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    forumPostsConnection: { totalCount: endCount },
-  } = await GetForumPostsCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
-
-export const getForumStatus = async (start: Date, end: Date) => {
-  const [category, thread, post] = await Promise.all([
-    getForumCategoryStatus(start, end),
-    getForumThreadStatus(start, end),
-    getForumPostStatus(start, end),
-  ]);
-
-  return { category, thread, post };
-};
 
 export const getWorkingGroupStatus = async (start: Date, end: Date) => {
   const {
@@ -760,18 +761,24 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
       status_json: { isTypeOf_eq: "OpeningStatusOpen" },
     },
   });
-  const { workingGroupApplicationsConnection: { totalCount: startApplicationCount } } = await GetWorkingGroupApplicationsTotalCount({
+  const {
+    workingGroupApplicationsConnection: {
+      totalCount: startApplicationCount
+    }
+  } = await GetWorkingGroupApplicationsTotalCount({
     where: {
       createdAt_lte: start
     }
   });
-  const { workingGroupApplicationsConnection: { totalCount: endApplicationCount } } = await GetWorkingGroupApplicationsTotalCount({
+  const {
+    workingGroupApplicationsConnection: {
+      totalCount: endApplicationCount
+    }
+  } = await GetWorkingGroupApplicationsTotalCount({
     where: {
       createdAt_lte: start
     }
   });
-
-
 
   const {
     openingFilledEventsConnection: { totalCount: filledCount },

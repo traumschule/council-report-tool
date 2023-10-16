@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BarChart,
   CartesianGrid,
@@ -45,52 +45,53 @@ function JoyChart({ data, title }: { data: DailyData[]; title: string }) {
 }
 
 export default function Charts({ start, end, storageStatus }: { start: number; end: number; storageStatus: boolean }) {
-  const [startTimestamp, setStartTimestamp] = useState<Date | undefined>(
-    undefined
-  );
-  const [endTimestamp, setEndTimestamp] = useState<Date | undefined>(undefined);
   const [videoData, setVideoData] = useState<DailyData[]>([]);
   const [videoNftData, setVideoNftData] = useState<DailyData[]>([]);
   const [channelData, setChannelData] = useState<DailyData[]>([]);
   const [membershipData, setMembershipData] = useState<DailyData[]>([]);
   const [storageData, setStorageData] = useState<DailyData[]>([]);
-  const [loading] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const { api } = useRpc();
 
-  useEffect(() => {
+  // const generate = useCallback(() => {
+  //   if (!startTimestamp || !endTimestamp) return;
+  //   getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
+
+  //   getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
+
+  //   // getChannelChartData(end, startTimestamp).then(setChannelData);
+
+  // getMembershipChartData(startTimestamp, endTimestamp).then(
+  //   setMembershipData
+  // );
+  //   // getStorageChartData(startTimestamp, endTimestamp).then(setStorageData);
+  // }, [startTimestamp, endTimestamp]);
+
+  const generate = async () => {
+    if (!start || !end) return;
     if (!api) return;
-    (async () => {
-      const startHash = await api.rpc.chain.getBlockHash(start);
-      const startTimestamp = new Date(
-        (await (await api.at(startHash)).query.timestamp.now()).toNumber()
-      );
-      setStartTimestamp(startTimestamp);
-      const endHash = await api.rpc.chain.getBlockHash(
-        end === 0 ? undefined : end
-      );
-      const endTimestamp = new Date(
-        (await (await api.at(endHash)).query.timestamp.now()).toNumber()
-      );
-      setEndTimestamp(endTimestamp);
-    })();
-  }, [api, start, end]);
-
-  const generate = useCallback(() => {
-    if (!startTimestamp || !endTimestamp) return;
-    getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
-
-    getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
-
-    getChannelChartData(end, startTimestamp).then(setChannelData);
-
-    getMembershipChartData(startTimestamp, endTimestamp).then(
-      setMembershipData
+    setLoading(true);
+    const startHash = await api.rpc.chain.getBlockHash(start);
+    const startTimestamp = new Date(
+      (await (await api.at(startHash)).query.timestamp.now()).toNumber()
     );
-    getStorageChartData(startTimestamp, endTimestamp).then(setStorageData);
-  }, [startTimestamp, endTimestamp]);
-
-
+    const endHash = await api.rpc.chain.getBlockHash(
+      end === 0 ? undefined : end
+    );
+    const endTimestamp = new Date(
+      (await (await api.at(endHash)).query.timestamp.now()).toNumber()
+    );
+    getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
+    getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
+    const channelChartData = await getChannelChartData(end, startTimestamp);
+    getMembershipChartData(startTimestamp, endTimestamp).then(setMembershipData);
+    setChannelData([...channelChartData]);
+    if (storageStatus) {
+      const storageChartData = await getStorageChartData(startTimestamp, endTimestamp);
+      setStorageData([...storageChartData])
+    }
+    setLoading(false);
+  }
 
   return (
     <div>
