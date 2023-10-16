@@ -21,8 +21,8 @@ export async function getWorkingGroupBudget(
     );
     const endBudget = endBlock
       ? toJoy(
-          await (await api.at(endBlock)).query[group as GroupIdName].budget()
-        )
+        await (await api.at(endBlock)).query[group as GroupIdName].budget()
+      )
       : undefined;
     bugets[group as GroupIdName] = { startBudget, endBudget };
   });

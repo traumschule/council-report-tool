@@ -1,6 +1,4 @@
 import { ApiPromise } from "@polkadot/api";
-import { Balance, AccountId } from "@polkadot/types/interfaces";
-const BURN_ADDRESS = "5D5PhZQNJzcJXVBxwJxZcsutjKPqUPydrvpu6HeiBfMaeKQu";
 import {
   getBalance,
   getBlockHash,
@@ -23,8 +21,7 @@ import {
   client as graphQLClient,
   getSdk,
   getWorkingGroups,
-  getStorageStatusByBlock,
-  getEvent
+  getStorageStatusByBlock
 
 } from "@/api";
 import { MEXC_WALLET } from "@/config";
@@ -176,32 +173,10 @@ export async function generateReport2(
     ((startIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const inflationChange = endInflation - startInflation;
-  // const blocksEvents = await getEvent(api, startBlockNumber, endBlockNumber);
-  // for (let [, blockEvents] of blocksEvents) {
-  //   blockEvents.map((event) => {
-  //     if (event.section == 'balances') {
-  //       if (event.method == 'BalanceSet') {
-  //         let amount = event.data[1] as Balance;
-  //         mint += toJoy(amount);
-  //       }
-  //       if (event.method == 'Transfer') {
-  //         let amount = event.data[2] as Balance;
-  //         let receiver = event.data[1] as AccountId;
-  //         if (receiver.toString() == BURN_ADDRESS) {
-  //           burn += toJoy(amount);
-  //         }
-  //       }
-  //     }
-  //     if (event.section == 'staking' && event.method == 'Reward') {
-  //       let amount = event.data[1] as Balance;
-  //       reward += toJoy(amount);
-  //     }
-  //   })
-  // }
-  // TODO mited/burned
+
   const supply = {
     inflationChange,
-    // TokensMinted: mint,
+    TokensMinted: issuanceChange,
     // TokensBurned: burn,
   };
 
@@ -298,23 +273,21 @@ export async function generateReport2(
     const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
     storageStatus.startBlock = startStorage;
     storageStatus.endBlock = endStorage;
-    storageStatus.growth = decimalAdjust(endStorage - startStorage);
-    storageStatus.growth = decimalAdjust((endStorage / startStorage - 1));
+    storageStatus.growthQty = decimalAdjust(endStorage - startStorage);
+    storageStatus.growth = decimalAdjust((endStorage / startStorage - 1)) * 100;
   }
 
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
   const { startCount, endCount } = await getChannelStatus(
     endBlockNumber,
-    startBlockNumber
+    startBlockTimestamp
   );
   const nonEmptyChannelStatus = {
     startCount,
     endCount,
     growthQty: (endCount - startCount),
-    growth: (endCount / startCount - 1)
+    growth: (endCount / startCount - 1) * 100
   }
-  // 10. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#media-storage
-  // TODO
 
   // 11. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#video-nfts
   const videoNftStatus = await getVideoNftStatus(
@@ -419,12 +392,12 @@ export async function generateReport4(
     startBlockTimestamp,
     endBlockTimestamp
   );
-  const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockNumber);
+  const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockTimestamp);
   const nonEmptyChannel = {
     startCount,
     endCount,
     growthQty: (endCount - startCount),
-    growth: (endCount / startCount - 1)
+    growth: (endCount / startCount - 1) * 100
   }
 
   const video = await getVideoStatus(startBlockTimestamp, endBlockTimestamp);

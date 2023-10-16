@@ -37,6 +37,10 @@ query GetNonEmptyChannel($limit:Int,$offset:Int,$where:VideoWhereInput){
   videos(limit:$limit offset:$offset orderBy:createdAt_ASC where:$where){
     id
     channelId
+    channel {
+      id
+      createdAt
+    }
     createdInBlock
   }
 }

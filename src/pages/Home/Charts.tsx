@@ -18,15 +18,10 @@ import {
   getStorageChartData,
 } from "@/api";
 import { useRpc } from "@/hooks";
-
-type DailyData = {
-  date: Date;
-  count: number;
-};
+import { DailyData } from "@/hooks/types";
 
 function JoyChart({ data, title }: { data: DailyData[]; title: string }) {
   if (data.length === 0) return <></>;
-
   return (
     <div className="p-2">
       <h3>{title}</h3>
@@ -49,7 +44,7 @@ function JoyChart({ data, title }: { data: DailyData[]; title: string }) {
   );
 }
 
-export default function Charts({ start, end }: { start: number; end: number }) {
+export default function Charts({ start, end, storageStatus }: { start: number; end: number; storageStatus: boolean }) {
   const [startTimestamp, setStartTimestamp] = useState<Date | undefined>(
     undefined
   );
@@ -65,7 +60,6 @@ export default function Charts({ start, end }: { start: number; end: number }) {
 
   useEffect(() => {
     if (!api) return;
-
     (async () => {
       const startHash = await api.rpc.chain.getBlockHash(start);
       const startTimestamp = new Date(
@@ -84,19 +78,19 @@ export default function Charts({ start, end }: { start: number; end: number }) {
 
   const generate = useCallback(() => {
     if (!startTimestamp || !endTimestamp) return;
-
     getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
 
     getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
 
-    getChannelChartData(startTimestamp, endTimestamp).then(setChannelData);
+    getChannelChartData(end, startTimestamp).then(setChannelData);
 
     getMembershipChartData(startTimestamp, endTimestamp).then(
       setMembershipData
     );
-
     getStorageChartData(startTimestamp, endTimestamp).then(setStorageData);
   }, [startTimestamp, endTimestamp]);
+
+
 
   return (
     <div>
@@ -111,7 +105,9 @@ export default function Charts({ start, end }: { start: number; end: number }) {
       <JoyChart data={videoNftData} title="Video NFTs" />
       <JoyChart data={channelData} title="Non-empty channels" />
       <JoyChart data={membershipData} title="Membership" />
-      <JoyChart data={storageData} title="Storage(MBytes)" />
+      {storageStatus ? (<JoyChart data={storageData} title="Storage(MBytes)" />
+      ) : null
+      }
     </div>
   );
 }

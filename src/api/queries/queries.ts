@@ -1,6 +1,6 @@
 import { GraphQLClient } from "graphql-request";
 import { BN, BN_ZERO } from "@polkadot/util";
-
+import moment from "moment";
 import { QN_URL } from "@/config";
 import {
   asElectedCouncil,
@@ -15,7 +15,7 @@ import {
 import { getSdk } from "./__generated__/gql";
 import { toJoy } from "@/helpers";
 import { decimalAdjust } from "@/helpers";
-
+import { DailyData, ChannelData } from "@/hooks/types";
 export { getSdk } from "./__generated__/gql";
 
 export const client = new GraphQLClient(QN_URL);
@@ -28,14 +28,351 @@ export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
   return councils.electedCouncils.map(asElectedCouncil);
 };
 
-export const getStorageBuget = async (start: Date) => {
-  const { GetStorageBuckets } = getSdk(client);
-  const { storageBuckets } = await GetStorageBuckets({ where: { createdAt_lte: start } })
-  let size = 0;
-  storageBuckets.map((d) => {
-    size += parseInt(d.dataObjectsSize);
+// StorageDataObjects
+
+export const getStorageChartData = async (start: Date, end: Date) => {
+  const { GetStorageDataObjectsCount, GetStorageDataObjects } = getSdk(client);
+  const defaultLimit = 1000;
+  let curDate = moment(start).format('YYYY-MM-DD');
+  let data: Array<DailyData> = [];
+  let storageSize = 0;
+  const { storageDataObjectsConnection: { totalCount } } = await GetStorageDataObjectsCount({
+    where: {
+      createdAt_lte: end,
+      createdAt_gt: start
+    }
+  });
+  const loop = Math.ceil(totalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { storageDataObjects } = await GetStorageDataObjects({
+      where: {
+        createdAt_lte: end,
+        createdAt_gt: start
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    storageDataObjects.map((a) => {
+      if (moment(a.createdAt).format('YYYY-MM-DD') == curDate) {
+        storageSize += parseInt(a.size) / 1024 / 1024 / 1024;
+      } else {
+        data.push({
+          date: new Date(curDate),
+          count: storageSize
+        });
+        storageSize = parseInt(a.size) / 1024 / 1024 / 1024;
+      }
+    })
+  }
+  data.push({
+    date: new Date(curDate),
+    count: storageSize
+  });
+  return data;
+};
+
+export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
+  const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
+  const defalultOffset = 1000;
+  const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
+    where: {
+      createdAt_lte: end
+    }
   })
+  const { totalCount } = storageDataObjectsConnection;
+  let loop = Math.ceil(totalCount / defalultOffset);
+  let startStorage = 1;
+  let endStorage = 1;
+  for (let i = 0; i < loop; i++) {
+    const { storageDataObjects } = await GetStorageDataObjects({
+      where: {
+        createdAt_lte: end
+      },
+      limit: defalultOffset,
+      offset: defalultOffset * i
+    });
+    storageDataObjects.map((storage) => {
+      if (start) {
+        let storageCreateAt = new Date(storage.createdAt);
+
+        if (storageCreateAt <= start) {
+          startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+        }
+      }
+      endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+    })
+  }
+  return {
+    startStorage: decimalAdjust(startStorage),
+    endStorage: decimalAdjust(endStorage)
+  }
 }
+
+// NonEmptyChannel
+
+export const getChannelStatus = async (endBlockNumber: number, startDate?: Date) => {
+  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
+  const defaultLimit = 1000;
+  let startCount: string[] = [];
+  let endCount: string[] = [];
+  const { videosConnection: { totalCount: videoCount } } = await GetVideoCount({
+    where: {
+      createdInBlock_lte: endBlockNumber
+    }
+  })
+  const loop = Math.ceil(videoCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { videos } = await GetNonEmptyChannel({
+      where: {
+        createdInBlock_lte: endBlockNumber
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    videos.map((video) => {
+      let flag = endCount.filter((a) => {
+        return a == video.channelId;
+      })
+      if (flag.length == 0) {
+        if (startDate) {
+          let channelCreatedAt = new Date(video.channel.createdAt);
+          if (channelCreatedAt <= startDate) {
+            startCount.push(video.channelId);
+          }
+        }
+        endCount.push(video.channelId);
+      }
+    })
+  }
+
+  return {
+    startCount: startCount.length,
+    endCount: endCount.length
+  };
+};
+
+export const getChannelChartData = async (endBlock: number, startDate: Date) => {
+  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
+  const defaultLimit = 1000;
+  console.log("startDate", startDate);
+  let channelCount: number = 0;
+  const totalChannels: Array<ChannelData> = [];
+  const channelChart: Array<DailyData> = [];
+  let curDate = moment(startDate).format('YYYY-MM-DD');
+  const { videosConnection: { totalCount } } = await GetVideoCount({
+    where: {
+      createdInBlock_lte: endBlock
+    }
+  });
+  const loop = Math.ceil(totalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { videos } = await GetNonEmptyChannel({
+      where: {
+        createdInBlock_lte: endBlock
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    videos.map((video) => {
+      let flag = totalChannels.find((channel) => {
+        return channel.id == video.channelId;
+      });
+      if (!flag) {
+        totalChannels.push(video.channel);
+      };
+    })
+  };
+  totalChannels.sort((a1, a2) => {
+    if (a1.createdAt <= a2.createdAt) {
+      return -1;
+    } else {
+      return 1;
+    }
+  })
+    .filter((a) => {
+      return new Date(a.createdAt) > startDate;
+    })
+    .map((a) => {
+      if (moment(a.createdAt).format('YYYY-MM-DD') == curDate) {
+        channelCount += 1;
+      } else {
+        channelChart.push({
+          count: channelCount,
+          date: new Date(curDate)
+        });
+        channelCount = 1;
+        curDate = moment(a.createdAt).format('YYYY-MM-DD');
+      };
+    });
+  channelChart.push({
+    count: channelCount,
+    date: new Date(curDate)
+  });
+  return channelChart;
+};
+
+// VideoNFT
+
+export const getVideoNftStatus = async (start: Date, end: Date) => {
+  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions, GetAuctionsTotalCount } =
+    getSdk(client);
+  const defaultLimit = 100;
+  let loop = 0;
+  let totalVolume = BN_ZERO;
+  let auctionVolume = BN_ZERO;
+  const {
+    nftIssuedEventsConnection: { totalCount: startCount },
+  } = await GetNftIssuedCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    nftIssuedEventsConnection: { totalCount: endCount },
+  } = await GetNftIssuedCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  const {
+    nftBoughtEventsConnection: { totalCount: boughtEventTotalCount },
+  } = await GetNftSaleCount({
+    where: { createdAt_gte: start, createdAt_lte: end },
+  });
+  const { auctionsConnection: { totalCount: auctionTotalCount } } = await GetAuctionsTotalCount({
+    where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true }
+  });
+  loop = Math.ceil(boughtEventTotalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { nftBoughtEvents } = await GetNftSales({
+      where: { createdAt_gte: start, createdAt_lte: end },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    totalVolume = nftBoughtEvents.reduce(
+      (total, { price }) => total.add(new BN(price)),
+      BN_ZERO
+    );
+  }
+  loop = Math.ceil(auctionTotalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { auctions } = await GetAuctions({
+      where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    auctionVolume = auctions.reduce(
+      (total, { topBid }) => total.add(new BN(topBid ? topBid.amount : 0)),
+      BN_ZERO
+    );
+  }
+  totalVolume = totalVolume.add(auctionVolume);
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+    saleVolume: toJoy(totalVolume),
+    saleQuantity: boughtEventTotalCount,
+  };
+};
+
+export const getVideoNftChartData = async (start: Date, end: Date) => {
+  const { GetNftIssuedCount } = getSdk(client);
+
+  const startDate = new Date(
+    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
+  );
+  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
+  const data = [];
+
+  const {
+    nftIssuedEventsConnection: { totalCount },
+  } = await GetNftIssuedCount({
+    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
+  });
+  let prevCount = totalCount;
+  for (
+    let date = startDate;
+    date <= endDate;
+    date = new Date(date.getTime() + 24 * 3600 * 1000)
+  ) {
+    const {
+      nftIssuedEventsConnection: { totalCount },
+    } = await GetNftIssuedCount({
+      where: { createdAt_lte: date.toISOString() },
+    });
+    data.push({
+      date: date,
+      count: totalCount - prevCount,
+    });
+    prevCount = totalCount;
+  }
+
+  return data;
+};
+
+// Videos
+
+export const getVideoStatus = async (start: Date, end: Date) => {
+  const { GetVideoCount } = getSdk(client);
+
+  const {
+    videosConnection: { totalCount: startCount },
+  } = await GetVideoCount({
+    where: { createdAt_lte: start },
+  });
+  const {
+    videosConnection: { totalCount: endCount },
+  } = await GetVideoCount({
+    where: { createdAt_lte: end },
+  });
+  const growthCount = endCount - startCount;
+  const growthPercent = (growthCount / startCount) * 100;
+
+  return {
+    startCount,
+    endCount,
+    growthCount,
+    growthPercent,
+  };
+};
+
+export const getVideoChartData = async (start: Date, end: Date) => {
+  const { GetVideoCount } = getSdk(client);
+
+  const startDate = new Date(
+    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
+  );
+  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
+
+  // iterate over days
+  const data = [];
+
+  const {
+    videosConnection: { totalCount },
+  } = await GetVideoCount({
+    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
+  });
+  let prevCount = totalCount;
+  for (
+    let date = startDate;
+    date <= endDate;
+    date = new Date(date.getTime() + 24 * 3600 * 1000)
+  ) {
+    const {
+      videosConnection: { totalCount },
+    } = await GetVideoCount({
+      where: { createdAt_lte: date.toISOString() },
+    });
+    data.push({
+      date: date,
+      count: totalCount - prevCount,
+    });
+    prevCount = totalCount;
+  }
+
+  return data;
+};
 
 export const getElectedCouncilById = async (
   id: string
@@ -240,322 +577,10 @@ export const getWGBudgetRefills = async (start: Date, end: Date) => {
 };
 
 //
-export const getVideoStatus = async (start: Date, end: Date) => {
-  const { GetVideoCount } = getSdk(client);
 
-  const {
-    videosConnection: { totalCount: startCount },
-  } = await GetVideoCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    videosConnection: { totalCount: endCount },
-  } = await GetVideoCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
 
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
 
-export const getVideoChartData = async (start: Date, end: Date) => {
-  const { GetVideoCount } = getSdk(client);
 
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    videosConnection: { totalCount },
-  } = await GetVideoCount({
-    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
-  });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      videosConnection: { totalCount },
-    } = await GetVideoCount({
-      where: { createdAt_lte: date.toISOString() },
-    });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
-    });
-    prevCount = totalCount;
-  }
-
-  return data;
-};
-
-export const getChannelStatus = async (endBlockNumber: number, startBlockNumber?: number) => {
-  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 1000;
-  let startCount: string[] = [];
-  let endCount: string[] = [];
-  const { videosConnection: { totalCount: videoCount } } = await GetVideoCount({
-    where: {
-      createdInBlock_lte: endBlockNumber
-    }
-  })
-  const loop = Math.ceil(videoCount / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { videos } = await GetNonEmptyChannel({
-      where: {
-        createdInBlock_lte: endBlockNumber
-      },
-      limit: defaultLimit,
-      offset: defaultLimit * i
-    });
-    videos.map((video) => {
-      let flag = endCount.filter((a) => {
-        return a == video.channelId;
-      })
-      if (flag.length == 0) {
-        if (startBlockNumber) {
-          if (video.createdInBlock <= startBlockNumber) {
-            startCount.push(video.channelId);
-          }
-        }
-        endCount.push(video.channelId);
-      }
-    })
-  }
-
-  return {
-    startCount: startCount.length,
-    endCount: endCount.length
-  };
-};
-
-export const getChannelChartData = async (start: Date, end: Date) => {
-  const { GetChannelsCount } = getSdk(client);
-
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    channelsConnection: { totalCount },
-  } = await GetChannelsCount({
-    where: {
-      createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000),
-      totalVideosCreated_gt: 0,
-    },
-  });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      channelsConnection: { totalCount },
-    } = await GetChannelsCount({
-      where: { createdAt_lte: date.toISOString(), totalVideosCreated_gt: 0 },
-    });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
-    });
-    prevCount = totalCount;
-  }
-
-  return data;
-};
-
-export const getStorageStatus = async (start: Date, end: Date) => {
-  const { GetStorageDataObjects } = getSdk(client);
-  const { storageDataObjects } = await GetStorageDataObjects({
-    where: {
-      createdAt_gte: start,
-      createdAt_lte: end,
-    },
-  });
-  const size = storageDataObjects
-    .map((d) => parseInt(d.size), 10)
-    .reduce((a, b) => a + b, 0);
-
-  return size;
-};
-
-export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
-  const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
-  const defalultOffset = 1000;
-  const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
-    where: {
-      createdAt_lte: end
-    }
-  })
-  const { totalCount } = storageDataObjectsConnection;
-  let loop = Math.ceil(totalCount / defalultOffset);
-  let startStorage = 1;
-  let endStorage = 1;
-  for (let i = 0; i < loop; i++) {
-    const { storageDataObjects } = await GetStorageDataObjects({
-      where: {
-        createdAt_lte: end
-      },
-      limit: defalultOffset,
-      offset: defalultOffset * i
-    });
-    storageDataObjects.map((storage) => {
-      if (start) {
-        let storageCreateAt = new Date(storage.createdAt);
-
-        if (storageCreateAt <= start) {
-          startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-        }
-      }
-      endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-    })
-  }
-  return {
-    startStorage: decimalAdjust(startStorage),
-    endStorage: decimalAdjust(endStorage)
-  }
-}
-
-export const getMediaStatus = async (start: Date, end: Date) => {
-  const { GetChannelsCount } = getSdk(client);
-
-  const {
-    channelsConnection: { totalCount: startCount },
-  } = await GetChannelsCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    channelsConnection: { totalCount: endCount },
-  } = await GetChannelsCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-  };
-};
-
-export const getVideoNftStatus = async (start: Date, end: Date) => {
-  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions, GetAuctionsTotalCount } =
-    getSdk(client);
-  const defaultLimit = 100;
-  let loop = 0;
-  let totalVolume = BN_ZERO;
-  let auctionVolume = BN_ZERO;
-  const {
-    nftIssuedEventsConnection: { totalCount: startCount },
-  } = await GetNftIssuedCount({
-    where: { createdAt_lte: start },
-  });
-  const {
-    nftIssuedEventsConnection: { totalCount: endCount },
-  } = await GetNftIssuedCount({
-    where: { createdAt_lte: end },
-  });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
-
-  const {
-    nftBoughtEventsConnection: { totalCount: boughtEventTotalCount },
-  } = await GetNftSaleCount({
-    where: { createdAt_gte: start, createdAt_lte: end },
-  });
-  const { auctionsConnection: { totalCount: auctionTotalCount } } = await GetAuctionsTotalCount({
-    where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true }
-  });
-  loop = Math.ceil(boughtEventTotalCount / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { nftBoughtEvents } = await GetNftSales({
-      where: { createdAt_gte: start, createdAt_lte: end },
-      limit: defaultLimit,
-      offset: defaultLimit * i
-    });
-    totalVolume = nftBoughtEvents.reduce(
-      (total, { price }) => total.add(new BN(price)),
-      BN_ZERO
-    );
-  }
-  loop = Math.ceil(auctionTotalCount / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { auctions } = await GetAuctions({
-      where: { createdAt_gte: start, createdAt_lte: end, isCompleted_eq: true },
-      limit: defaultLimit,
-      offset: defaultLimit * i
-    });
-    auctionVolume = auctions.reduce(
-      (total, { topBid }) => total.add(new BN(topBid ? topBid.amount : 0)),
-      BN_ZERO
-    );
-  }
-  totalVolume = totalVolume.add(auctionVolume);
-  return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-    saleVolume: toJoy(totalVolume),
-    saleQuantity: boughtEventTotalCount,
-  };
-};
-
-export const getVideoNftChartData = async (start: Date, end: Date) => {
-  const { GetNftIssuedCount } = getSdk(client);
-
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    nftIssuedEventsConnection: { totalCount },
-  } = await GetNftIssuedCount({
-    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
-  });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      nftIssuedEventsConnection: { totalCount },
-    } = await GetNftIssuedCount({
-      where: { createdAt_lte: date.toISOString() },
-    });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
-    });
-    prevCount = totalCount;
-  }
-
-  return data;
-};
 
 export const getMembershipStatus = async (start: Date, end: Date) => {
   const { GetMembersCount } = getSdk(client);
@@ -779,30 +804,6 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
 
 
 
-export const getStorageChartData = async (start: Date, end: Date) => {
-  const startDate = new Date(start.toDateString());
-  const endDate = new Date(end.toDateString());
-
-  // iterate over days
-  const data = [];
-
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const size = await getStorageStatus(
-      date,
-      new Date(date.getTime() + 24 * 3600 * 1000)
-    );
-    data.push({
-      date: date,
-      count: parseFloat((size / 1024 / 1024).toFixed(2)),
-    });
-  }
-
-  return data;
-};
 
 export const getFilledWorkers = async () => {
   const { getOpeningFilled, getOpeningFilledTotalCount } = getSdk(client);

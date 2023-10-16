@@ -63,7 +63,7 @@ export default function Report1() {
             value={block}
             onChange={(e) => setBlock(parseInt(e.target.value, 10))}
           />
-          <input type="checkbox" className="pr-3" checked={storage} onClick={storageHandler} />
+          <input type="checkbox" className="pr-3" checked={storage} onChange={storageHandler} />
           <label>Storage Status</label>
 
           <button

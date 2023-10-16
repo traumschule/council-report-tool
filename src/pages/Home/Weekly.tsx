@@ -69,7 +69,7 @@ export default function Weekly() {
         </button>
       </div>
       <ReactJson src={report2} theme="monokai" collapsed />
-      <Charts start={startBlock} end={endBlock} />
+      <Charts start={startBlock} end={endBlock} storageStatus={storageFlag} />
     </div>
   );
 }
