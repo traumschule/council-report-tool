@@ -20,14 +20,6 @@ export { getSdk } from "./__generated__/gql";
 
 export const client = new GraphQLClient(QN_URL);
 
-export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
-  const { GetElectedCouncils } = getSdk(client);
-
-  const councils = await GetElectedCouncils();
-
-  return councils.electedCouncils.map(asElectedCouncil);
-};
-
 // StorageDataObjects
 
 export const getStorageChartData = async (start: Date, end: Date) => {
@@ -61,6 +53,7 @@ export const getStorageChartData = async (start: Date, end: Date) => {
           count: storageSize
         });
         storageSize = parseInt(a.size) / 1024 / 1024 / 1024;
+        curDate = moment(a.createdAt).format('YYYY-MM-DD');
       }
     })
   }
@@ -531,7 +524,38 @@ export const getMembershipChartData = async (start: Date, end: Date) => {
   return data;
 };
 
-//
+// workers
+
+export const getFilledWorkers = async () => {
+  const { getOpeningFilled, getOpeningFilledTotalCount } = getSdk(client);
+  const { openingFilledEventsConnection: { totalCount } } = await getOpeningFilledTotalCount();
+  const { openingFilledEvents } = await getOpeningFilled({ limit: totalCount })
+  return openingFilledEvents
+}
+
+export const getTerminateWorkers = async () => {
+  const { getTerminatedWorker, getTerminatedWorkerTotalCount } = getSdk(client);
+  const { terminatedWorkerEventsConnection: { totalCount } } = await getTerminatedWorkerTotalCount();
+  const { terminatedWorkerEvents } = await getTerminatedWorker({ limit: totalCount });
+  return terminatedWorkerEvents;
+}
+
+export const getExitedWorkers = async () => {
+  const { getWorkerExited, getWorkerExitedTotalCount } = getSdk(client);
+  const { workerExitedEventsConnection: { totalCount } } = await getWorkerExitedTotalCount();
+  const { workerExitedEvents } = await getWorkerExited({ limit: totalCount });
+  return workerExitedEvents;
+}
+
+// council
+
+export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
+  const { GetElectedCouncils } = getSdk(client);
+
+  const councils = await GetElectedCouncils();
+
+  return councils.electedCouncils.map(asElectedCouncil);
+};
 
 export const getElectedCouncilById = async (
   id: string
@@ -547,6 +571,7 @@ export const getElectedCouncilById = async (
   return asElectedCouncil(council.electedCouncils[0]);
 };
 
+// workingGroup
 
 export const getCurrentWorkingGroups = async (): Promise<WorkingGroup[]> => {
   const { GetWorkingGroups } = getSdk(client);
@@ -811,24 +836,3 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
 
 
 
-
-export const getFilledWorkers = async () => {
-  const { getOpeningFilled, getOpeningFilledTotalCount } = getSdk(client);
-  const { openingFilledEventsConnection: { totalCount } } = await getOpeningFilledTotalCount();
-  const { openingFilledEvents } = await getOpeningFilled({ limit: totalCount })
-  return openingFilledEvents
-}
-
-export const getTerminateWorkers = async () => {
-  const { getTerminatedWorker, getTerminatedWorkerTotalCount } = getSdk(client);
-  const { terminatedWorkerEventsConnection: { totalCount } } = await getTerminatedWorkerTotalCount();
-  const { terminatedWorkerEvents } = await getTerminatedWorker({ limit: totalCount });
-  return terminatedWorkerEvents;
-}
-
-export const getExitedWorkers = async () => {
-  const { getWorkerExited, getWorkerExitedTotalCount } = getSdk(client);
-  const { workerExitedEventsConnection: { totalCount } } = await getWorkerExitedTotalCount();
-  const { workerExitedEvents } = await getWorkerExited({ limit: totalCount });
-  return workerExitedEvents;
-}
