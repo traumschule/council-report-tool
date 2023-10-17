@@ -22,6 +22,8 @@ import {
   getSdk,
   getWorkingGroups,
   getStorageStatusByBlock,
+  getVideoNftChartData,
+  getVideoChartData
 
 } from "@/api";
 import { MEXC_WALLET } from "@/config";
@@ -127,6 +129,7 @@ export async function generateReport2(
     growthQty: 0,
     growth: 0
   };
+
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
@@ -266,8 +269,8 @@ export async function generateReport2(
 
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
   const videoStatus = await getVideoStatus(
-    startBlockTimestamp,
-    endBlockTimestamp
+    startBlockNumber,
+    endBlockNumber
   );
   if (storageFlag) {
     const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
@@ -400,7 +403,7 @@ export async function generateReport4(
     growth: (endCount / startCount - 1) * 100
   }
 
-  const video = await getVideoStatus(startBlockTimestamp, endBlockTimestamp);
+  const video = await getVideoStatus(startBlockNumber, endBlockNumber);
   if (storageFlag) {
     const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
     storageStatus.totalStorageUsed = endStorage;

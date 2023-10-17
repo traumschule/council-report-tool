@@ -42,5 +42,6 @@ query GetNonEmptyChannel($limit:Int,$offset:Int,$where:VideoWhereInput){
       createdAt
     }
     createdInBlock
+    createdAt
   }
 }

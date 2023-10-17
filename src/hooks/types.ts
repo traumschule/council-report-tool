@@ -14,3 +14,8 @@ export type ChannelData = {
   id: string,
   createdAt: Date
 }
+
+export type VideoData = {
+  id: string,
+  createdAt: string
+}

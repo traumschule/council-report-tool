@@ -15,7 +15,7 @@ import {
 import { getSdk } from "./__generated__/gql";
 import { toJoy } from "@/helpers";
 import { decimalAdjust } from "@/helpers";
-import { DailyData, ChannelData } from "@/hooks/types";
+import { DailyData, ChannelData, VideoData } from "@/hooks/types";
 export { getSdk } from "./__generated__/gql";
 
 export const client = new GraphQLClient(QN_URL);
@@ -304,22 +304,21 @@ export const getVideoNftChartData = async (start: Date, end: Date) => {
 
 // Videos
 
-export const getVideoStatus = async (start: Date, end: Date) => {
+export const getVideoStatus = async (start: number, end: number) => {
   const { GetVideoCount } = getSdk(client);
 
   const {
     videosConnection: { totalCount: startCount },
   } = await GetVideoCount({
-    where: { createdAt_lte: start },
+    where: { createdInBlock_lte: start },
   });
   const {
     videosConnection: { totalCount: endCount },
   } = await GetVideoCount({
-    where: { createdAt_lte: end },
+    where: { createdInBlock_lte: end },
   });
   const growthCount = endCount - startCount;
   const growthPercent = (growthCount / startCount) * 100;
-
   return {
     startCount,
     endCount,
@@ -328,41 +327,49 @@ export const getVideoStatus = async (start: Date, end: Date) => {
   };
 };
 
-export const getVideoChartData = async (start: Date, end: Date) => {
-  const { GetVideoCount } = getSdk(client);
-
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    videosConnection: { totalCount },
-  } = await GetVideoCount({
-    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
+export const getVideoChartData = async (start: number, end: number) => {
+  const { GetNonEmptyChannel, GetVideoCount } = getSdk(client);
+  const defaultLimit = 1000;
+  let curDate = "";
+  let count = 0;
+  const videoChart: Array<DailyData> = [];
+  const { videosConnection: { totalCount } } = await GetVideoCount({
+    where: {
+      createdInBlock_gt: start,
+      createdInBlock_lte: end
+    }
   });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      videosConnection: { totalCount },
-    } = await GetVideoCount({
-      where: { createdAt_lte: date.toISOString() },
+  let loop = Math.ceil(totalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { videos } = await GetNonEmptyChannel({
+      where: {
+        createdInBlock_gt: start,
+        createdInBlock_lte: end
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
     });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
+    if (curDate == "") {
+      curDate = moment(videos[0].createdAt).format('YYYY-MM-DD');
+    }
+    videos.map((video) => {
+      if (moment(video.createdAt).format('YYYY-MM-DD') == curDate)
+        count++;
+      else {
+        videoChart.push({
+          date: new Date(curDate),
+          count
+        });
+        count = 1;
+        curDate = moment(video.createdAt).format('YYYY-MM-DD');
+      }
     });
-    prevCount = totalCount;
   }
-
-  return data;
+  videoChart.push({
+    date: new Date(curDate),
+    count
+  });
+  return videoChart
 };
 
 // Forum

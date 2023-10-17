@@ -81,7 +81,9 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
     const endTimestamp = new Date(
       (await (await api.at(endHash)).query.timestamp.now()).toNumber()
     );
-    getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
+
+    const videoChartData = await getVideoChartData(start, end);
+    setVideoData([...videoChartData]);
     getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
     const channelChartData = await getChannelChartData(end, startTimestamp);
     getMembershipChartData(startTimestamp, endTimestamp).then(setMembershipData);

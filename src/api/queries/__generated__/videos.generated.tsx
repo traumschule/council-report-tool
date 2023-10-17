@@ -31,7 +31,7 @@ export type GetNonEmptyChannelQueryVariables = Types.Exact<{
 }>;
 
 
-export type GetNonEmptyChannelQuery = { __typename: 'Query', videos: Array<{ __typename: 'Video', id: string, channelId: string, createdInBlock: number, channel: { __typename: 'Channel', id: string, createdAt: any } }> };
+export type GetNonEmptyChannelQuery = { __typename: 'Query', videos: Array<{ __typename: 'Video', id: string, channelId: string, createdInBlock: number, createdAt: any, channel: { __typename: 'Channel', id: string, createdAt: any } }> };
 
 export const BasicVideoFieldsFragmentDoc = gql`
     fragment BasicVideoFields on Video {
@@ -140,6 +140,7 @@ export const GetNonEmptyChannelDocument = gql`
       createdAt
     }
     createdInBlock
+    createdAt
   }
 }
     `;
