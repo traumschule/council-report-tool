@@ -472,7 +472,6 @@ export const getMembershipCount = async (date: Date) => {
 
 export const getMembershipStatus = async (start: Date, end: Date) => {
   const { GetMembersCount } = getSdk(client);
-
   const {
     membershipsConnection: { totalCount: startCount },
   } = await GetMembersCount({
@@ -485,7 +484,6 @@ export const getMembershipStatus = async (start: Date, end: Date) => {
   });
   const growthCount = endCount - startCount;
   const growthPercent = (growthCount / startCount) * 100;
-
   return {
     startCount,
     endCount,
@@ -495,40 +493,47 @@ export const getMembershipStatus = async (start: Date, end: Date) => {
 };
 
 export const getMembershipChartData = async (start: Date, end: Date) => {
-  const { GetMembersCount } = getSdk(client);
-
-  const startDate = new Date(
-    `${start.toISOString().slice(0, 11)}00:00:00.000Z`
-  );
-  const endDate = new Date(`${end.toISOString().slice(0, 11)}00:00:00.000Z`);
-
-  // iterate over days
-  const data = [];
-
-  const {
-    membershipsConnection: { totalCount },
-  } = await GetMembersCount({
-    where: { createdAt_lte: new Date(startDate.getTime() - 24 * 3600 * 1000) },
+  const { GetMembersCount, GetMembers } = getSdk(client);
+  const defaultLimit = 1000;
+  let curDate = "";
+  let count = 0;
+  const chartData: Array<DailyData> = [];
+  const { membershipsConnection: { totalCount } } = await GetMembersCount({
+    where: {
+      createdAt_gt: start,
+      createdAt_lte: end
+    }
   });
-  let prevCount = totalCount;
-  for (
-    let date = startDate;
-    date <= endDate;
-    date = new Date(date.getTime() + 24 * 3600 * 1000)
-  ) {
-    const {
-      membershipsConnection: { totalCount },
-    } = await GetMembersCount({
-      where: { createdAt_lte: date.toISOString() },
+  let loop = Math.ceil(totalCount / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { memberships } = await GetMembers({
+      where: {
+        createdAt_gt: start,
+        createdAt_lte: end
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
     });
-    data.push({
-      date: date,
-      count: totalCount - prevCount,
+    if (curDate == "")
+      curDate = moment(memberships[0].createdAt).format('YYYY-MM-DD');
+    memberships.map((member) => {
+      if (moment(member.createdAt).format('YYYY-MM-DD') == curDate)
+        count++;
+      else {
+        chartData.push({
+          date: new Date(curDate),
+          count
+        });
+        count = 1;
+        curDate = moment(member.createdAt).format('YYYY-MM-DD');
+      }
     });
-    prevCount = totalCount;
   }
-
-  return data;
+  chartData.push({
+    date: new Date(curDate),
+    count
+  });
+  return chartData;
 };
 
 // workers

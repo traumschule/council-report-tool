@@ -37376,7 +37376,6 @@ export type GetMembersCountQuery = { __typename: 'Query', membershipsConnection:
 
 export type GetMembersQueryVariables = Exact<{
   where?: InputMaybe<MembershipWhereInput>;
-  orderBy?: InputMaybe<Array<MembershipOrderByInput> | MembershipOrderByInput>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
@@ -38488,8 +38487,13 @@ export const GetMembersCountDocument = gql`
 }
     `;
 export const GetMembersDocument = gql`
-    query GetMembers($where: MembershipWhereInput, $orderBy: [MembershipOrderByInput!], $offset: Int, $limit: Int) {
-  memberships(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
+    query GetMembers($where: MembershipWhereInput, $offset: Int, $limit: Int) {
+  memberships(
+    where: $where
+    orderBy: createdAt_ASC
+    offset: $offset
+    limit: $limit
+  ) {
     ...MemberFields
     __typename
   }

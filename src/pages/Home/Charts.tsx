@@ -86,8 +86,9 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
     setVideoData([...videoChartData]);
     getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
     const channelChartData = await getChannelChartData(end, startTimestamp);
-    getMembershipChartData(startTimestamp, endTimestamp).then(setMembershipData);
     setChannelData([...channelChartData]);
+    const memberShipChartData = await getMembershipChartData(startTimestamp, endTimestamp);
+    setMembershipData([...memberShipChartData])
     if (storageStatus) {
       const storageChartData = await getStorageChartData(startTimestamp, endTimestamp);
       setStorageData([...storageChartData])

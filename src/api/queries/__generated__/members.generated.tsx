@@ -12,7 +12,6 @@ export type GetMembersCountQuery = { __typename: 'Query', membershipsConnection:
 
 export type GetMembersQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.MembershipWhereInput>;
-  orderBy?: Types.InputMaybe<Array<Types.MembershipOrderByInput> | Types.MembershipOrderByInput>;
   offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
@@ -120,8 +119,13 @@ export type GetMembersCountQueryHookResult = ReturnType<typeof useGetMembersCoun
 export type GetMembersCountLazyQueryHookResult = ReturnType<typeof useGetMembersCountLazyQuery>;
 export type GetMembersCountQueryResult = Apollo.QueryResult<GetMembersCountQuery, GetMembersCountQueryVariables>;
 export const GetMembersDocument = gql`
-    query GetMembers($where: MembershipWhereInput, $orderBy: [MembershipOrderByInput!], $offset: Int, $limit: Int) {
-  memberships(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
+    query GetMembers($where: MembershipWhereInput, $offset: Int, $limit: Int) {
+  memberships(
+    where: $where
+    orderBy: createdAt_ASC
+    offset: $offset
+    limit: $limit
+  ) {
     ...MemberFields
     __typename
   }
@@ -141,7 +145,6 @@ export const GetMembersDocument = gql`
  * const { data, loading, error } = useGetMembersQuery({
  *   variables: {
  *      where: // value for 'where'
- *      orderBy: // value for 'orderBy'
  *      offset: // value for 'offset'
  *      limit: // value for 'limit'
  *   },

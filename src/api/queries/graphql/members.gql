@@ -8,8 +8,8 @@ query GetMembersCount($where: MembershipWhereInput) {
   }
 }
 
-query GetMembers($where: MembershipWhereInput, $orderBy: [MembershipOrderByInput!], $offset: Int, $limit: Int) {
-  memberships(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
+query GetMembers($where: MembershipWhereInput,  $offset: Int, $limit: Int) {
+  memberships(where: $where, orderBy: createdAt_ASC , offset: $offset, limit: $limit) {
     ...MemberFields
     __typename
   }
