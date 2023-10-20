@@ -10,6 +10,61 @@ query GetElectedCouncils(
   }
 }
 
+query GetCouncilReward(
+  $where:RewardPaymentEventWhereInput,
+  $limit:Int,
+  $offset:Int
+){
+  rewardPaymentEvents(
+    where:$where 
+    limit:$limit 
+    offset:$offset 
+    orderBy:createdAt_ASC
+    ) {
+        paidBalance
+        inBlock
+        councilMember{
+          memberId
+        }
+    }
+}
+
+query GetCouncilRewardTotalCount(
+  $where:RewardPaymentEventWhereInput
+){
+  rewardPaymentEventsConnection(
+    where:$where
+  ){
+    totalCount
+  }
+}
+
+query GetCouncilReFill(
+  $where: BudgetRefillEventWhereInput,
+  $limit:Int,
+  $offset:Int
+) {
+  budgetRefillEvents(
+    where:$where
+    limit:$limit
+    offset:$offset
+    orderBy:createdAt_ASC
+  ) {
+    balance
+    inBlock
+  }
+}
+
+query GetCouncilReFillTotalCount(
+  $where:BudgetRefillEventWhereInput
+) {
+  budgetRefillEventsConnection(
+    where:$where
+  ) {
+    totalCount
+  }
+}
+
 fragment ElectedCouncilFields on ElectedCouncil {
   id
   electedAtBlock

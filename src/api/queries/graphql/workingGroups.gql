@@ -132,11 +132,28 @@ query GetWorkingGroups(
   }
 }
 
-query GetBudgetSpending($where: BudgetSpendingEventWhereInput) {
-  budgetSpendingEvents(where: $where) {
+query GetBudgetSpending($where: BudgetSpendingEventWhereInput,$offset:Int,$limit:Int) {
+  budgetSpendingEvents(where: $where  offset:$offset limit:$limit orderBy:createdAt_ASC) {
     ...BudgetSpendingEventFields
+  } 
+}
+
+query GetBudgetSpendingEventsTotalCount($where: BudgetSpendingEventWhereInput) {
+  budgetSpendingEventsConnection(where: $where) {
+    totalCount
   }
 }
+
+query GetBudgetFundedEvents($where:BudgetFundedEventWhereInput,$limit:Int,$offset:Int){
+  budgetFundedEvents(where:$where limit:$limit offset:$offset orderBy:createdAt_ASC){
+    id
+    amount
+    inBlock
+    createdAt
+  }
+}
+
+
 
 query GetWorkers($where: WorkerWhereInput, $offset: Int, $limit: Int) {
   workers(where: $where, offset: $offset, limit: $limit) {

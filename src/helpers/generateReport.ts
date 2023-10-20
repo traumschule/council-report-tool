@@ -12,24 +12,30 @@ import {
   getWorkingGroupSpending,
   getForumStatus,
   getWorkingGroupStatus,
-  getFundingProposalPaid,
   getMembershipCount,
   getOfficialCirculatingSupply,
   getOfficialTotalSupply,
   getWorkingGroupBudget,
-  getWGBudgetRefills,
+  getWGRefillProposal,
+  getWGSpendingProposal,
   client as graphQLClient,
   getSdk,
   getWorkingGroups,
   getStorageStatusByBlock,
+  getWorkingGroupSalary,
+  getCouncilReward,
+  getWGSpendingBudget,
+  getFundingProposal,
+  getCreatorPayoutReward,
+  getCouncilRefill,
+  getWGSpendingWithReceiverID
 
 } from "@/api";
 import { MEXC_WALLET } from "@/config";
 import { toJoy } from "./bn";
 import { BN } from "bn.js";
-import { GroupIdName, ProposalStatus } from "@/types";
+import { GroupIdName, ProposalStatus, GroupIdToGroupParam } from "@/types";
 import { decimalAdjust } from "./utils";
-
 const INITIAL_SUPPLY = 1_000_000_000;
 
 export async function generateReport1(api: ApiPromise, blockNumber: number, storageFlag: boolean) {
@@ -39,11 +45,14 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   const blockTimestamp = new Date(
     (await (await api.at(blockHash)).query.timestamp.now()).toNumber()
   );
+  const councilBudget = await getCouncilReward(4407985, 4507985);
+  console.log("council budget", councilBudget);
   const general = {
     block: blockNumber,
     hash: blockHash,
     timestamp: blockTimestamp,
   };
+
   const {
     videosConnection: { totalCount: videoCount },
   } = await GetVideoCount({
@@ -56,7 +65,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
       createdAt_lte: blockTimestamp,
     },
   });
-  const { endCount } = await getChannelStatus(blockNumber);
+  // const { endCount } = await getChannelStatus(blockNumber);
   const {
     nftIssuedEventsConnection: { totalCount: nftCount },
   } = await GetNftIssuedCount({
@@ -65,7 +74,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   let content = {
     videoCount,
     channelCount,
-    nonEmptyChannelCount: endCount,
+    // nonEmptyChannelCount: endCount,
     nftCount,
     totalStorage: 0
   };
@@ -118,7 +127,7 @@ export async function generateReport2(
   api: ApiPromise,
   storageFlag: boolean,
   startBlockNumber: number,
-  endBlockNumber?: number,
+  endBlockNumber: number,
 ) {
   // 1. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#general-1
   let storageStatus = {
@@ -166,7 +175,8 @@ export async function generateReport2(
   const startBalance = toJoy(
     await getBalance(api, MEXC_WALLET, startBlockHash)
   );
-  const endBalance = toJoy(await getBalance(api, MEXC_WALLET, endBlockHash));
+  const endBalance = toJoy(
+    await getBalance(api, MEXC_WALLET, endBlockHash));
   const mexcBalChange = endBalance - startBalance;
 
   // 4. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#supply-1
@@ -183,94 +193,103 @@ export async function generateReport2(
   };
 
   // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
-  // TODO: Check council rewards
-  const councilMembers = await api.query.council.councilMembers();
-  const councilorReward = await api.query.council.councilorReward();
-  const councilRewards = toJoy(
-    councilorReward.mul(
-      new BN(councilMembers.length * (endBlockNumber - startBlockNumber))
-    )
-  );
-  const workingGroupSpending = await getWorkingGroupSpending(
-    startBlock,
-    endBlock
-  );
-  const wgSpending = Object.values(
-    workingGroupSpending.discretionarySpending
-  ).reduce((a, b) => a + b, 0);
-  const fundingProposals = toJoy(
-    await getFundingProposalPaid(startBlockTimestamp, endBlockTimestamp)
-  );
-  const creatorPayoutRewards = toJoy(new BN(0));
-
-  // TODO calc validator rewards
-  // iterate all blocks and get validator reward per block and sum them up
-  // const validatorRewards = toJoy(new BN(0));
-
+  const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
+  const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
+  let wgSpentBudget = 0;
+  const validatorRewardsBudget = toJoy(new BN(0));
+  const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
+  const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
+  Object.keys(wgBudget).map((wgName) => {
+    wgSpentBudget += wgBudget[wgName as GroupIdName].startBudget;
+    wgSpentBudget -= wgBudget[wgName as GroupIdName].endBudget;
+    if (wgRefillProposal[wgName as GroupIdName]) {
+      wgSpentBudget += wgRefillProposal[wgName as GroupIdName];
+    }
+  });
+  const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
+  const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
   const daoSpending = {
-    councilRewards,
-    wgSpending,
-    fundingProposals,
-    creatorPayoutRewards,
-    // validatorRewards: reward,
-    totalDaoSepnding: 0,
+    councilReward: councilRewardBudget,
+    wgSpent: wgSpentBudget,
+    fundingProposals: fundingProposalBudget,
+    creatorPayoutRewards: creatorPayoutRewardBudget,
+    validatorRewards: validatorRewardsBudget,
+    grandTotal: (councilRewardBudget + wgSpentBudget + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget)
   };
-  const totalDaoSepnding = Object.values(daoSpending).reduce(
-    (a, b) => a + b,
-    0
-  );
-  daoSpending["totalDaoSepnding"] = totalDaoSepnding;
 
   // 6. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#council-budget
-  const councilBudget = await getCouncilBudget(
+
+  const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
     api,
     startBlockHash,
     endBlockHash
   );
+  const refillCouncilBudget = await getCouncilRefill(startBlockNumber, endBlockNumber);
+  const councilBudget = {
+    startCouncilBudget,
+    spendingCouncilBudget: (councilRewardBudget + creatorPayoutRewardBudget + wgSpentBudget + fundingProposalBudget),
+    refillCouncilBudget,
+    endCouncilBudget
+  }
 
   // 7. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#wg-budgets
-  const wgBudgets = (await getWorkingGroupBudget(
-    api,
-    startBlockHash,
-    endBlockHash
-  )) as {
-      [key in GroupIdName]: {
-        startBudget: number;
-        endBudget: number | undefined;
-        spending: number;
-        refills: number;
-      };
+
+  const wgBudgets = {} as {
+    [key in GroupIdName]: {
+      startBudget: number;
+      totalRefilled: number;
+      totalSpending: number;
+      endBudget: number;
+      leadSalary: number;
+      workerSalary: number;
+      spendingProposal: number;
     };
-
-  const refills = await getWGBudgetRefills(
-    startBlockTimestamp,
-    endBlockTimestamp
-  );
-  for (const r of Object.entries(refills)) {
-    wgBudgets[r[0] as GroupIdName]["refills"] = r[1];
-  }
-  // add spending
-  for (const spending of Object.entries(
-    workingGroupSpending.discretionarySpending
-  )) {
-    wgBudgets[spending[0] as GroupIdName]["spending"] = spending[1];
-  }
-
-  const wgSalary = {
-    leadSalary: workingGroupSpending.leadSalary,
-    workersSalary: workingGroupSpending.workersSalary,
   };
+  const wgSpendingProposal = await getWGSpendingProposal(startBlockTimestamp, endBlockTimestamp);
+  const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
+  const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
+  Object.keys(GroupIdToGroupParam)
+    .map(async (_group) => {
+      wgBudgets[_group as GroupIdName].startBudget = wgBudget[_group as GroupIdName].startBudget;
+      wgBudgets[_group as GroupIdName].endBudget = wgBudget[_group as GroupIdName].endBudget;
+      let leadSalary = 0;
+      const leadMember = wgSalary[_group as GroupIdName]
+        .find((a) => {
+          return a.isLead == true;
+        });
 
-  const workingGroup = {
-    wgBudgets,
-    wgSalary,
-  };
+      if (leadMember) {
+        const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
+        leadSalary += leadMember.reward * (endBlockNumber - startBlockNumber) + leadSpending;
+        const leadCouncilReward = councilReward
+          .filter((c) => {
+            return Number(c.memberId) == leadMember.memeberId
+          })
+          .reduce((a, b) => a + b.amount, 0);
+        leadSalary += leadCouncilReward;
+      }
+      wgBudgets[_group as GroupIdName].leadSalary = leadSalary;
+      let workSalary = wgSalary[_group as GroupIdName]
+        .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0);
+      wgBudgets[_group as GroupIdName].totalSpending = workSalary
+      if (wgSpending[_group as GroupIdName]) {
+        wgBudgets[_group as GroupIdName].workerSalary = workSalary + wgSpending[_group as GroupIdName];
+        wgBudgets[_group as GroupIdName].totalSpending += wgSpending[_group as GroupIdName];
+      }
+      if (wgSpendingProposal[_group as GroupIdName]) {
+        wgBudgets[_group as GroupIdName].spendingProposal = wgSpendingProposal[_group as GroupIdName];
+        wgBudgets[_group as GroupIdName].totalSpending += wgSpendingProposal[_group as GroupIdName];
+      }
+      if (wgRefillProposal[_group as GroupIdName]) {
+        wgBudgets[_group as GroupIdName].totalRefilled = wgRefillProposal[_group as GroupIdName];
+      }
+    });
 
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
-  const videoStatus = await getVideoStatus(
-    startBlockNumber,
-    endBlockNumber
-  );
+  // const videoStatus = await getVideoStatus(
+  //   startBlockNumber,
+  //   endBlockNumber
+  // );
   if (storageFlag) {
     const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
     storageStatus.startBlock = startStorage;
@@ -280,16 +299,16 @@ export async function generateReport2(
   }
 
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
-  const { startCount, endCount } = await getChannelStatus(
-    endBlockNumber,
-    startBlockTimestamp
-  );
-  const nonEmptyChannelStatus = {
-    startCount,
-    endCount,
-    growthQty: (endCount - startCount),
-    growth: (endCount / startCount - 1) * 100
-  }
+  // const { startCount, endCount } = await getChannelStatus(
+  //   endBlockNumber,
+  //   startBlockTimestamp
+  // );
+  // const nonEmptyChannelStatus = {
+  //   startCount,
+  //   endCount,
+  //   growthQty: (endCount - startCount),
+  //   growth: (endCount / startCount - 1) * 100
+  // }
 
   // 11. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#video-nfts
   const videoNftStatus = await getVideoNftStatus(
@@ -356,9 +375,9 @@ export async function generateReport2(
     supply,
     daoSpending,
     councilBudget,
-    workingGroup,
-    videoStatus,
-    nonEmptyChannelStatus,
+    wgBudgets,
+    // videoStatus,
+    // nonEmptyChannelStatus,
     videoNftStatus,
     membershipStatus,
     storageStatus,
@@ -390,10 +409,16 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
+
+  // working group status
+
   const workingGroup = await getWorkingGroupStatus(
     startBlockTimestamp,
     endBlockTimestamp
   );
+
+  // nonEmptyChannel
+
   const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockTimestamp);
   const nonEmptyChannel = {
     startCount,
@@ -402,13 +427,23 @@ export async function generateReport4(
     growth: (endCount / startCount - 1) * 100
   }
 
+  // video
+
   const video = await getVideoStatus(startBlockNumber, endBlockNumber);
+
+  // storage
+
   if (storageFlag) {
     const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
     storageStatus.totalStorageUsed = endStorage;
     storageStatus.storageChanged = decimalAdjust(endStorage - startStorage);
   }
+
+  // forum
+
   const forum = await getForumStatus(startBlockTimestamp, endBlockTimestamp);
+
+  // proposal
 
   const proposals = await getProposals(startBlockTimestamp, endBlockTimestamp);
   const proposal = {
@@ -418,68 +453,111 @@ export async function generateReport4(
     expired: proposals.filter((p) => p.status === "expired").length,
   };
 
+  // membership
+
   const membership = await getMembershipStatus(
     startBlockTimestamp,
     endBlockTimestamp
   );
 
-  const councilBudget = await getCouncilBudget(
+  // available council budget
+
+  const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
     api,
     startBlockHash,
     endBlockHash
   );
-
-  // 7. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#wg-budgets
-  const wgBudgets = (await getWorkingGroupBudget(
-    api,
-    startBlockHash,
-    endBlockHash
-  )) as {
-      [key in GroupIdName]: {
-        startBudget: number;
-        endBudget: number | undefined;
-        spending: number;
-        refills: number;
-      };
-    };
-
-  const refills = await getWGBudgetRefills(
-    startBlockTimestamp,
-    endBlockTimestamp
-  );
-  for (const r of Object.entries(refills)) {
-    wgBudgets[r[0] as GroupIdName]["refills"] = r[1];
+  const refillCouncilBudget = await getCouncilRefill(startBlockNumber, endBlockNumber);
+  const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
+  const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
+  let wgSpentBudget = 0;
+  const validatorRewardsBudget = toJoy(new BN(0));
+  const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
+  const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
+  Object.keys(wgBudget).map((wgName) => {
+    wgSpentBudget += wgBudget[wgName as GroupIdName].startBudget;
+    wgSpentBudget -= wgBudget[wgName as GroupIdName].endBudget;
+    if (wgRefillProposal[wgName as GroupIdName]) {
+      wgSpentBudget += wgRefillProposal[wgName as GroupIdName];
+    }
+  });
+  const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
+  const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
+  const councilBudget = {
+    startCouncilBudget,
+    spendingCouncilBudget: (councilRewardBudget + creatorPayoutRewardBudget + wgSpentBudget + fundingProposalBudget),
+    refillCouncilBudget,
+    councilReward: councilRewardBudget,
+    wgSpent: wgSpentBudget,
+    fundingProposals: fundingProposalBudget,
+    creatorPayoutRewards: creatorPayoutRewardBudget,
+    validatorRewards: validatorRewardsBudget,
+    endCouncilBudget
   }
-  const startBlock = {
-    number: startBlockNumber,
-    hash: startBlockHash,
-    timestamp: startBlockTimestamp,
-  };
-  const endBlock = {
-    number: endBlockNumber,
-    hash: endBlockHash,
-    timestamp: endBlockTimestamp,
-  };
 
-  const workingGroupSpending = await getWorkingGroupSpending(
-    startBlock,
-    endBlock
-  );
-  const _wgSpending = Object.values(
-    workingGroupSpending.discretionarySpending
-  ).reduce((a, b) => a + b, 0);
-  // add spending
-  for (const spending of Object.entries(
-    workingGroupSpending.discretionarySpending
-  )) {
-    wgBudgets[spending[0] as GroupIdName]["spending"] = spending[1];
+  // inflation 
+
+  const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
+  const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
+  const issuanceChange = endIssuance - startIssuance;
+  const inflation = {
+    startIssuance,
+    endIssuance,
+    termIssuance: issuanceChange,
+    Inflation: (endIssuance / startIssuance - 1) * 100
   }
+
+  // available working group budget
+  let wgBudgets = {} as {
+    [key in GroupIdName]: {
+      startWGBudget: number
+      endWGBudget: number;
+      discretionarySpending: number;
+      spendingProposal: number
+      workerRewards: number;
+      leadRewards: number;
+    }
+  }
+  const wgSpendingProposal = await getWGSpendingProposal(startBlockTimestamp, endBlockTimestamp);
+  const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
+  const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
+  Object.keys(GroupIdToGroupParam)
+    .map(async (_group) => {
+      wgBudgets[_group as GroupIdName].startWGBudget = wgBudget[_group as GroupIdName].startBudget;
+      wgBudgets[_group as GroupIdName].endWGBudget = wgBudget[_group as GroupIdName].endBudget;
+      let leadSalary = 0;
+      const leadMember = wgSalary[_group as GroupIdName]
+        .find((a) => {
+          return a.isLead == true;
+        });
+
+      if (leadMember) {
+        const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
+        leadSalary += leadMember.reward * (endBlockNumber - startBlockNumber) + leadSpending;
+        const leadCouncilReward = councilReward
+          .filter((c) => {
+            return Number(c.memberId) == leadMember.memeberId
+          })
+          .reduce((a, b) => a + b.amount, 0);
+        leadSalary += leadCouncilReward;
+      }
+      wgBudgets[_group as GroupIdName].leadRewards = leadSalary;
+      let workSalary = wgSalary[_group as GroupIdName]
+        .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0);
+      if (wgSpending[_group as GroupIdName]) {
+        wgBudgets[_group as GroupIdName].workerRewards = workSalary + wgSpending[_group as GroupIdName];
+      }
+      if (wgSpendingProposal[_group as GroupIdName]) {
+        wgBudgets[_group as GroupIdName].spendingProposal = wgSpendingProposal[_group as GroupIdName];
+      }
+    });
 
   return {
     nonEmptyChannel,
     video,
     storage: storageStatus,
     councilBudget,
+    inflation,
     wgBudgets,
     forum,
     proposal,

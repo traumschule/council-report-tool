@@ -13,9 +13,9 @@ import {
 } from "@/types";
 
 import { getSdk } from "./__generated__/gql";
-import { toJoy } from "@/helpers";
-import { decimalAdjust } from "@/helpers";
-import { DailyData, ChannelData, VideoData } from "@/hooks/types";
+import { toJoy, decimalAdjust } from "@/helpers";
+import { GroupIdToGroupParam, GroupIdName } from "@/types";
+import { DailyData, ChannelData, BudgetData, CouncilBudgetData } from "@/hooks/types";
 export { getSdk } from "./__generated__/gql";
 
 export const client = new GraphQLClient(QN_URL);
@@ -536,6 +536,23 @@ export const getMembershipChartData = async (start: Date, end: Date) => {
   return chartData;
 };
 
+// proposal
+
+export const getProposals = async (
+  start: Date,
+  end: Date
+): Promise<Proposal[]> => {
+  const { getProposals } = getSdk(client);
+  const { proposals } = await getProposals({
+    where: {
+      createdAt_gt: start,
+      createdAt_lt: end,
+    },
+  });
+
+  return proposals.map(asProposal);
+};
+
 // workers
 
 export const getFilledWorkers = async () => {
@@ -559,177 +576,146 @@ export const getExitedWorkers = async () => {
   return workerExitedEvents;
 }
 
-// council
 
-export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
-  const { GetElectedCouncils } = getSdk(client);
 
-  const councils = await GetElectedCouncils();
+// council Reward
 
-  return councils.electedCouncils.map(asElectedCouncil);
-};
-
-export const getElectedCouncilById = async (
-  id: string
-): Promise<ElectedCouncil> => {
-  const { GetElectedCouncils } = getSdk(client);
-
-  const council = await GetElectedCouncils({ where: { id_eq: `${id}` } });
-
-  if (council.electedCouncils.length !== 1) {
-    throw new Error(`No council found with id ${id}`);
-  }
-
-  return asElectedCouncil(council.electedCouncils[0]);
-};
-
-// workingGroup
-
-export const getCurrentWorkingGroups = async (): Promise<WorkingGroup[]> => {
-  const { GetWorkingGroups } = getSdk(client);
-  const { workingGroups } = await GetWorkingGroups();
-  return workingGroups.map(asWorkingGroup);
-};
-
-export const getWorkingGroupSpending = async (
-  start: Block & { hash: string },
-  end: Block & { hash: string }
-) => {
-  const workingGroups = await getCurrentWorkingGroups();
-  const { GetBudgetSpending, getFundingProposalPaid } = getSdk(client);
-
-  // calculate working group budgets
-  const spending = {} as {
-    [key in WorkingGroup["id"]]: number;
-  };
-  for await (const workingGroup of workingGroups) {
-    const { budgetSpendingEvents } = await GetBudgetSpending({
-      where: {
-        group: { id_eq: workingGroup.id },
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const wgSpending = budgetSpendingEvents.reduce(
-      (total, { amount }) => total.add(new BN(amount)),
-      BN_ZERO
-    );
-
-    spending[workingGroup.id] = toJoy(wgSpending);
-  }
-
-  const leadSalary = {} as {
-    [key in WorkingGroup["id"]]: number | undefined;
-  };
-  for (const workingGroup of workingGroups) {
-    const { leader } = workingGroup;
-    if (!leader) {
-      continue;
+export const getCouncilReward = async (start: number, end: number) => {
+  const { GetCouncilReward, GetCouncilRewardTotalCount } = getSdk(client);
+  const { rewardPaymentEventsConnection: { totalCount } } = await GetCouncilRewardTotalCount({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end
     }
-    let salary = BN_ZERO;
-    const rewards = leader.rewardPerBlock.mul(
-      new BN(end.number - start.number)
-    );
-    salary = salary.add(rewards);
-
-    const proposalPaidPromise = getFundingProposalPaid({
-      where: {
-        account_in: leader.membership.boundAccounts,
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const directPaysPromise = GetBudgetSpending({
-      where: {
-        reciever_in: leader.membership.boundAccounts,
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const [proposalPaid, directPays] = await Promise.all([
-      proposalPaidPromise,
-      directPaysPromise,
-    ]);
-
-    const paid = proposalPaid.requestFundedEvents
-      .map((e) => new BN(e.amount))
-      .reduce((a, b) => a.add(b), BN_ZERO);
-    salary = salary.add(paid);
-
-    const discretionarySpending = directPays.budgetSpendingEvents.reduce(
-      (total, { amount }) => total.add(new BN(amount)),
-      BN_ZERO
-    );
-    salary = salary.add(discretionarySpending);
-    leadSalary[workingGroup.id] = toJoy(salary);
-  }
-
-  const workersSalary = {} as {
-    [key in WorkingGroup["id"]]: number;
-  };
-  for await (const workingGroup of workingGroups) {
-    const salariesPromise = workingGroup.workers.map(async (worker) => {
-      let salary = BN_ZERO;
-      salary = salary.add(
-        worker.rewardPerBlock.mul(new BN(end.number - start.number))
-      );
-
-      const proposalPaidPromise = getFundingProposalPaid({
-        where: {
-          account_in: worker.membership.boundAccounts,
-          createdAt_gte: start.timestamp,
-          createdAt_lte: end.timestamp,
-        },
-      });
-      const directPaysPromise = GetBudgetSpending({
-        where: {
-          reciever_in: worker.membership.boundAccounts,
-          createdAt_gte: start.timestamp,
-          createdAt_lte: end.timestamp,
-        },
-      });
-      const [proposalPaid, directPays] = await Promise.all([
-        proposalPaidPromise,
-        directPaysPromise,
-      ]);
-
-      const paid = proposalPaid.requestFundedEvents
-        .map((e) => new BN(e.amount))
-        .reduce((a, b) => a.add(b), BN_ZERO);
-      salary = salary.add(paid);
-
-      const discretionarySpending = directPays.budgetSpendingEvents.reduce(
-        (total, { amount }) => total.add(new BN(amount)),
-        BN_ZERO
-      );
-
-      salary = salary.add(discretionarySpending);
-      return salary;
-    });
-
-    const salaries = await Promise.all(salariesPromise);
-    const groupSalary = salaries.reduce((a, b) => a.add(b), BN_ZERO);
-    workersSalary[workingGroup.id] = toJoy(groupSalary);
-  }
-
-  return { discretionarySpending: spending, leadSalary, workersSalary };
-};
-
-export const getFundingProposalPaid = async (start: Date, end: Date) => {
-  const { getFundingProposalPaid } = getSdk(client);
-  const { requestFundedEvents } = await getFundingProposalPaid({
-    where: { createdAt_gte: start, createdAt_lte: end },
   });
+  const { rewardPaymentEvents } = await GetCouncilReward({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end
+    },
+    limit: totalCount
+  });
+  const councilReward = rewardPaymentEvents.map((r) => {
+    return {
+      memberId: r.councilMember.memberId,
+      amount: toJoy(new BN(r.paidBalance))
+    }
+  });
+  return councilReward;
+}
 
+// council refill 
+
+export const getCouncilRefill = async (start: number, end: number) => {
+  const { GetCouncilReFill, GetCouncilReFillTotalCount } = getSdk(client);
+  const { budgetRefillEventsConnection: { totalCount } } = await GetCouncilReFillTotalCount({
+    where: {
+      inBlock_gt: start,
+      inBlock_lte: end
+    }
+  });
+  const { budgetRefillEvents } = await GetCouncilReFill({
+    where: {
+      inBlock_gt: start,
+      inBlock_lte: end
+    },
+    limit: totalCount
+  });
+  const _refillBudget = budgetRefillEvents
+    .map((e) => new BN(e.balance))
+    .reduce((a, b) => a.add(b), BN_ZERO);
+  return toJoy(_refillBudget);
+}
+
+// creator payout reward
+export const getCreatorPayoutReward = async (start: number, end: number) => {
+
+  const { GetCreatorPayoutReward, GetCreatorPayoutRewardTotalCount } = getSdk(client);
+  const { channelRewardClaimedEventsConnection: { totalCount } } = await GetCreatorPayoutRewardTotalCount({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end
+    }
+  });
+  const { channelRewardClaimedEvents } = await GetCreatorPayoutReward({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end
+    },
+    limit: totalCount
+  });
+  const amount = channelRewardClaimedEvents
+    .map((c) => new BN(c.amount))
+    .reduce((a, b) => a + toJoy(b), 0)
+  return amount;
+}
+
+// funding proposals
+export const getFundingProposal = async (start: number, end: number) => {
+  const { getFundingProposalTotalCount, getFundingProposals } = getSdk(client);
+  const { requestFundedEventsConnection: { totalCount } } = await getFundingProposalTotalCount({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end
+    }
+  });
+  const { requestFundedEvents } = await getFundingProposals({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end,
+    },
+    limit: totalCount
+  });
   const paid = requestFundedEvents
     .map((e) => new BN(e.amount))
     .reduce((a, b) => a.add(b), BN_ZERO);
 
-  return paid;
+  return toJoy(paid);
 };
 
-export const getWGBudgetRefills = async (start: Date, end: Date) => {
-  const { getProposals } = getSdk(client);
+// wg spending budget
+export const getWGSpendingBudget = async (start: number, end: number,) => {
+  const { GetBudgetSpending, GetBudgetSpendingEventsTotalCount } = getSdk(client);
+  const spendingBudget = {} as {
+    [key in GroupIdName]: number
+  };
+  const promises = Object.keys(GroupIdToGroupParam).map(async (_group) => {
+    const { budgetSpendingEventsConnection: { totalCount } } = await GetBudgetSpendingEventsTotalCount({
+      where: {
+        inBlock_gte: start,
+        inBlock_lte: end,
+        group: { id_eq: _group }
+      }
+    });
+    const { budgetSpendingEvents } = await GetBudgetSpending({
+      where: {
+        inBlock_gte: start,
+        inBlock_lte: end,
+        group: { id_eq: _group }
+      },
+      limit: totalCount
+    });
+    spendingBudget[_group as GroupIdName] = budgetSpendingEvents
+      .map((b) => new BN(b.amount))
+      .reduce((a, b) => a + toJoy(b), 0);
+  });
+  await Promise.all(promises);
+  return spendingBudget
+}
+
+// wg refill proposal budget
+
+export const getWGRefillProposal = async (start: Date, end: Date) => {
+  const { getProposals, getProposalTotalCount } = getSdk(client);
+  const { proposalsConnection: { totalCount } } = await getProposalTotalCount({
+    where: {
+      isFinalized_eq: true,
+      details_json: { isTypeOf_eq: "UpdateWorkingGroupBudgetProposalDetails" },
+      status_json: { isTypeOf_eq: "ProposalStatusExecuted" },
+      createdAt_gte: start,
+      createdAt_lte: end,
+    }
+  });
   const refills = {} as {
     [key in WorkingGroup["id"]]: number;
   };
@@ -742,6 +728,7 @@ export const getWGBudgetRefills = async (start: Date, end: Date) => {
       createdAt_gte: start,
       createdAt_lte: end,
     },
+    limit: totalCount
   });
 
   for (const proposal of proposals) {
@@ -762,21 +749,51 @@ export const getWGBudgetRefills = async (start: Date, end: Date) => {
   return refills;
 };
 
-export const getProposals = async (
-  start: Date,
-  end: Date
-): Promise<Proposal[]> => {
-  const { getProposals } = getSdk(client);
+// wg spending proposal budget
+
+export const getWGSpendingProposal = async (start: Date, end: Date) => {
+  const { getProposals, getProposalTotalCount } = getSdk(client);
+  const { proposalsConnection: { totalCount } } = await getProposalTotalCount({
+    where: {
+      isFinalized_eq: true,
+      details_json: { isTypeOf_eq: "FundingRequestProposalDetails" },
+      status_json: { isTypeOf_eq: "ProposalStatusExecuted" },
+      createdAt_gte: start,
+      createdAt_lte: end,
+    }
+  });
+  const spendingProposal = {} as {
+    [key in WorkingGroup["id"]]: number;
+  };
   const { proposals } = await getProposals({
     where: {
-      createdAt_gt: start,
-      createdAt_lt: end,
+      isFinalized_eq: true,
+      details_json: { isTypeOf_eq: "FundingRequestProposalDetails" },
+      status_json: { isTypeOf_eq: "ProposalStatusExecuted" },
+      createdAt_gte: start,
+      createdAt_lte: end,
     },
+    limit: totalCount
   });
+  for (const proposal of proposals) {
+    const {
+      group: { id },
+      amount,
+    } = proposal.details as {
+      __typename: string;
+      group: {
+        id: WorkingGroup["id"];
+        __typename: string;
+      };
+      amount: string;
+    };
+    spendingProposal[id] =
+      toJoy(new BN(amount)) + (isNaN(spendingProposal[id]) ? 0 : spendingProposal[id]);
+  }
+  return spendingProposal;
+}
 
-  return proposals.map(asProposal);
-};
-
+// wg status 
 
 export const getWorkingGroupStatus = async (start: Date, end: Date) => {
   const {
@@ -845,6 +862,188 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
     leftCount,
   };
 };
+
+// wg spending with receiver ID
+
+export const getWGSpendingWithReceiverID = async (start: number, end: number, accountID: string) => {
+  const { GetBudgetSpending, GetBudgetSpendingEventsTotalCount } = getSdk(client);
+  const { budgetSpendingEventsConnection: { totalCount } } = await GetBudgetSpendingEventsTotalCount({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end,
+      reciever_eq: accountID
+    }
+  });
+  const { budgetSpendingEvents } = await GetBudgetSpending({
+    where: {
+      inBlock_gte: start,
+      inBlock_lte: end,
+      reciever_eq: accountID
+    },
+    limit: totalCount
+  });
+  const spendingBudget = budgetSpendingEvents
+    .map((s) => new BN(s.amount))
+    .reduce((a, b) => a + toJoy(b), 0);
+  return spendingBudget
+}
+
+export const getCurrentWorkingGroups = async (): Promise<WorkingGroup[]> => {
+  const { GetWorkingGroups } = getSdk(client);
+  const { workingGroups } = await GetWorkingGroups();
+  return workingGroups.map(asWorkingGroup);
+};
+
+export const getWorkingGroupSpending = async (
+  start: Block & { hash: string },
+  end: Block & { hash: string }
+) => {
+  const workingGroups = await getCurrentWorkingGroups();
+  const { GetBudgetSpending, getFundingProposals } = getSdk(client);
+
+  // calculate working group budgets
+  const spending = {} as {
+    [key in WorkingGroup["id"]]: number;
+  };
+  for await (const workingGroup of workingGroups) {
+    const { budgetSpendingEvents } = await GetBudgetSpending({
+      where: {
+        group: { id_eq: workingGroup.id },
+        createdAt_gte: start.timestamp,
+        createdAt_lte: end.timestamp,
+      },
+    });
+    const wgSpending = budgetSpendingEvents.reduce(
+      (total, { amount }) => total.add(new BN(amount)),
+      BN_ZERO
+    );
+
+    spending[workingGroup.id] = toJoy(wgSpending);
+  }
+
+  const leadSalary = {} as {
+    [key in WorkingGroup["id"]]: number | undefined;
+  };
+  for (const workingGroup of workingGroups) {
+    const { leader } = workingGroup;
+    if (!leader) {
+      continue;
+    }
+    let salary = BN_ZERO;
+    const rewards = leader.rewardPerBlock.mul(
+      new BN(end.number - start.number)
+    );
+    salary = salary.add(rewards);
+
+    const proposalPaidPromise = getFundingProposals({
+      where: {
+        account_in: leader.membership.boundAccounts,
+        createdAt_gte: start.timestamp,
+        createdAt_lte: end.timestamp,
+      },
+    });
+    const directPaysPromise = GetBudgetSpending({
+      where: {
+        reciever_in: leader.membership.boundAccounts,
+        createdAt_gte: start.timestamp,
+        createdAt_lte: end.timestamp,
+      },
+    });
+    const [proposalPaid, directPays] = await Promise.all([
+      proposalPaidPromise,
+      directPaysPromise,
+    ]);
+
+    const paid = proposalPaid.requestFundedEvents
+      .map((e) => new BN(e.amount))
+      .reduce((a, b) => a.add(b), BN_ZERO);
+    salary = salary.add(paid);
+
+    const discretionarySpending = directPays.budgetSpendingEvents.reduce(
+      (total, { amount }) => total.add(new BN(amount)),
+      BN_ZERO
+    );
+    salary = salary.add(discretionarySpending);
+    leadSalary[workingGroup.id] = toJoy(salary);
+  }
+
+  const workersSalary = {} as {
+    [key in WorkingGroup["id"]]: number;
+  };
+  for await (const workingGroup of workingGroups) {
+    const salariesPromise = workingGroup.workers.map(async (worker) => {
+      let salary = BN_ZERO;
+      salary = salary.add(
+        worker.rewardPerBlock.mul(new BN(end.number - start.number))
+      );
+
+      const proposalPaidPromise = getFundingProposals({
+        where: {
+          account_in: worker.membership.boundAccounts,
+          createdAt_gte: start.timestamp,
+          createdAt_lte: end.timestamp,
+        },
+      });
+      const directPaysPromise = GetBudgetSpending({
+        where: {
+          reciever_in: worker.membership.boundAccounts,
+          createdAt_gte: start.timestamp,
+          createdAt_lte: end.timestamp,
+        },
+      });
+      const [proposalPaid, directPays] = await Promise.all([
+        proposalPaidPromise,
+        directPaysPromise,
+      ]);
+
+      const paid = proposalPaid.requestFundedEvents
+        .map((e) => new BN(e.amount))
+        .reduce((a, b) => a.add(b), BN_ZERO);
+      salary = salary.add(paid);
+
+      const discretionarySpending = directPays.budgetSpendingEvents.reduce(
+        (total, { amount }) => total.add(new BN(amount)),
+        BN_ZERO
+      );
+
+      salary = salary.add(discretionarySpending);
+      return salary;
+    });
+
+    const salaries = await Promise.all(salariesPromise);
+    const groupSalary = salaries.reduce((a, b) => a.add(b), BN_ZERO);
+    workersSalary[workingGroup.id] = toJoy(groupSalary);
+  }
+
+  return { discretionarySpending: spending, leadSalary, workersSalary };
+};
+
+// council
+
+
+export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
+  const { GetElectedCouncils } = getSdk(client);
+
+  const councils = await GetElectedCouncils();
+
+  return councils.electedCouncils.map(asElectedCouncil);
+};
+
+export const getElectedCouncilById = async (
+  id: string
+): Promise<ElectedCouncil> => {
+  const { GetElectedCouncils } = getSdk(client);
+
+  const council = await GetElectedCouncils({ where: { id_eq: `${id}` } });
+
+  if (council.electedCouncils.length !== 1) {
+    throw new Error(`No council found with id ${id}`);
+  }
+
+  return asElectedCouncil(council.electedCouncils[0]);
+};
+
+
 
 
 

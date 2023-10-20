@@ -6,3 +6,16 @@ export class CacheEvent {
 
     }
 }
+
+export type Worker = {
+    memeberId: number,
+    handle: string,
+    reward: number,
+    isLead: boolean,
+    rewardAccount: string
+}
+
+export type WorkingGroup = {
+    groupId: string,
+    workers: Array<Worker>
+}

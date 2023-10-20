@@ -10,6 +10,34 @@ query GetChannelsCount($where: ChannelWhereInput) {
   }
 }
 
+query GetCreatorPayoutReward(
+  $where:ChannelRewardClaimedEventWhereInput
+  $offset:Int,
+  $limit:Int
+  ){
+    channelRewardClaimedEvents(
+      where:$where 
+      limit:$limit 
+      offset:$offset
+  ) {
+    amount
+    channel {
+      title
+      cumulativeRewardClaimed
+    }
+    channelId
+    inBlock
+  }
+}
+
+query GetCreatorPayoutRewardTotalCount(
+  $where:ChannelRewardClaimedEventWhereInput
+) {
+  channelRewardClaimedEventsConnection(where:$where){
+    totalCount
+  }
+}
+
 fragment FullChannelFields on Channel {
   ...BasicChannelFields
   activeVideosCounter

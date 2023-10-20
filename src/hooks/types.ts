@@ -1,4 +1,5 @@
 import { ElectedCouncil } from '@/types';
+import BN from 'bn.js';
 
 export interface ForSelectedCouncil {
   council?: ElectedCouncil;
@@ -18,4 +19,14 @@ export type ChannelData = {
 export type VideoData = {
   id: string,
   createdAt: string
+}
+
+export type BudgetData = {
+  groupId: string,
+  amount: number
+}
+
+export type CouncilBudgetData = {
+  memberId: string,
+  amount: number
 }

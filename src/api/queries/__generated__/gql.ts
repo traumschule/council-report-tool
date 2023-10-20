@@ -37302,6 +37302,22 @@ export type GetChannelsCountQueryVariables = Exact<{
 
 export type GetChannelsCountQuery = { __typename: 'Query', channelsConnection: { __typename: 'ChannelConnection', totalCount: number } };
 
+export type GetCreatorPayoutRewardQueryVariables = Exact<{
+  where?: InputMaybe<ChannelRewardClaimedEventWhereInput>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetCreatorPayoutRewardQuery = { __typename: 'Query', channelRewardClaimedEvents: Array<{ __typename: 'ChannelRewardClaimedEvent', amount: string, channelId: string, inBlock: number, channel: { __typename: 'Channel', title?: string | null, cumulativeRewardClaimed?: string | null } }> };
+
+export type GetCreatorPayoutRewardTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<ChannelRewardClaimedEventWhereInput>;
+}>;
+
+
+export type GetCreatorPayoutRewardTotalCountQuery = { __typename: 'Query', channelRewardClaimedEventsConnection: { __typename: 'ChannelRewardClaimedEventConnection', totalCount: number } };
+
 export type FullChannelFieldsFragment = { __typename: 'Channel', activeVideosCounter: number, description?: string | null, isPublic?: boolean | null, isCensored: boolean, id: string, title?: string | null, createdAt: any, rewardAccount: string, channelStateBloatBond: string, language?: { __typename: 'Language', id: string, iso: string } | null, ownerMember?: { __typename: 'Membership', id: string, handle: string, metadata: { __typename: 'MemberMetadata', about?: string | null, avatar?: { __typename: 'AvatarObject', avatarObject?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null } | { __typename: 'AvatarUri', avatarUri: string } | null } } | null, coverPhoto?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null, avatarPhoto?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null };
 
 export type BasicMembershipFieldsFragment = { __typename: 'Membership', id: string, handle: string, metadata: { __typename: 'MemberMetadata', about?: string | null, avatar?: { __typename: 'AvatarObject', avatarObject?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null } | { __typename: 'AvatarUri', avatarUri: string } | null } };
@@ -37319,6 +37335,38 @@ export type GetElectedCouncilsQueryVariables = Exact<{
 
 
 export type GetElectedCouncilsQuery = { __typename: 'Query', electedCouncils: Array<{ __typename: 'ElectedCouncil', id: string, electedAtBlock: number, endedAtBlock?: number | null, electedAtTime: any, endedAtTime?: any | null, electedAtNetwork: Network, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> }> };
+
+export type GetCouncilRewardQueryVariables = Exact<{
+  where?: InputMaybe<RewardPaymentEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetCouncilRewardQuery = { __typename: 'Query', rewardPaymentEvents: Array<{ __typename: 'RewardPaymentEvent', paidBalance: string, inBlock: number, councilMember: { __typename: 'CouncilMember', memberId: string } }> };
+
+export type GetCouncilRewardTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<RewardPaymentEventWhereInput>;
+}>;
+
+
+export type GetCouncilRewardTotalCountQuery = { __typename: 'Query', rewardPaymentEventsConnection: { __typename: 'RewardPaymentEventConnection', totalCount: number } };
+
+export type GetCouncilReFillQueryVariables = Exact<{
+  where?: InputMaybe<BudgetRefillEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetCouncilReFillQuery = { __typename: 'Query', budgetRefillEvents: Array<{ __typename: 'BudgetRefillEvent', balance: string, inBlock: number }> };
+
+export type GetCouncilReFillTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<BudgetRefillEventWhereInput>;
+}>;
+
+
+export type GetCouncilReFillTotalCountQuery = { __typename: 'Query', budgetRefillEventsConnection: { __typename: 'BudgetRefillEventConnection', totalCount: number } };
 
 export type ElectedCouncilFieldsFragment = { __typename: 'ElectedCouncil', id: string, electedAtBlock: number, endedAtBlock?: number | null, electedAtTime: any, endedAtTime?: any | null, electedAtNetwork: Network, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> };
 
@@ -37357,7 +37405,7 @@ export type GetForumCategoriesCountQueryVariables = Exact<{
 
 export type GetForumCategoriesCountQuery = { __typename: 'Query', forumCategoriesConnection: { __typename: 'ForumCategoryConnection', totalCount: number } };
 
-export type GetFundingProposalPaidQueryVariables = Exact<{
+export type GetFundingProposalsQueryVariables = Exact<{
   where?: InputMaybe<RequestFundedEventWhereInput>;
   orderBy?: InputMaybe<Array<RequestFundedEventOrderByInput> | RequestFundedEventOrderByInput>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -37365,7 +37413,14 @@ export type GetFundingProposalPaidQueryVariables = Exact<{
 }>;
 
 
-export type GetFundingProposalPaidQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string }> };
+export type GetFundingProposalsQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string }> };
+
+export type GetFundingProposalTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<RequestFundedEventWhereInput>;
+}>;
+
+
+export type GetFundingProposalTotalCountQuery = { __typename: 'Query', requestFundedEventsConnection: { __typename: 'RequestFundedEventConnection', totalCount: number } };
 
 export type GetMembersCountQueryVariables = Exact<{
   where?: InputMaybe<MembershipWhereInput>;
@@ -37470,6 +37525,13 @@ export type GetProposalsQueryVariables = Exact<{
 
 
 export type GetProposalsQuery = { __typename: 'Query', proposals: Array<{ __typename: 'Proposal', id: string, title: string, statusSetAtTime: any, createdAt: any, councilApprovals: number, exactExecutionBlock?: number | null, status: { __typename: 'ProposalStatusCanceledByRuntime' } | { __typename: 'ProposalStatusCancelled' } | { __typename: 'ProposalStatusDeciding' } | { __typename: 'ProposalStatusDormant' } | { __typename: 'ProposalStatusExecuted' } | { __typename: 'ProposalStatusExecutionFailed' } | { __typename: 'ProposalStatusExpired' } | { __typename: 'ProposalStatusGracing' } | { __typename: 'ProposalStatusRejected' } | { __typename: 'ProposalStatusSlashed' } | { __typename: 'ProposalStatusVetoed' }, details: { __typename: 'AmendConstitutionProposalDetails' } | { __typename: 'CancelWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'CreateWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'DecreaseWorkingGroupLeadStakeProposalDetails' } | { __typename: 'FillWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'FundingRequestProposalDetails' } | { __typename: 'RuntimeUpgradeProposalDetails' } | { __typename: 'SetCouncilBudgetIncrementProposalDetails' } | { __typename: 'SetCouncilorRewardProposalDetails' } | { __typename: 'SetInitialInvitationBalanceProposalDetails' } | { __typename: 'SetInitialInvitationCountProposalDetails' } | { __typename: 'SetMaxValidatorCountProposalDetails' } | { __typename: 'SetMembershipLeadInvitationQuotaProposalDetails' } | { __typename: 'SetMembershipPriceProposalDetails' } | { __typename: 'SetReferralCutProposalDetails' } | { __typename: 'SetWorkingGroupLeadRewardProposalDetails' } | { __typename: 'SignalProposalDetails' } | { __typename: 'SlashWorkingGroupLeadProposalDetails' } | { __typename: 'TerminateWorkingGroupLeadProposalDetails' } | { __typename: 'UpdateChannelPayoutsProposalDetails' } | { __typename: 'UpdateWorkingGroupBudgetProposalDetails', amount: string, group?: { __typename: 'WorkingGroup', id: string } | null } | { __typename: 'VetoProposalDetails' }, creator: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> };
+
+export type GetProposalTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<ProposalWhereInput>;
+}>;
+
+
+export type GetProposalTotalCountQuery = { __typename: 'Query', proposalsConnection: { __typename: 'ProposalConnection', totalCount: number } };
 
 export type ProposalFieldsFragment = { __typename: 'Proposal', id: string, title: string, statusSetAtTime: any, createdAt: any, councilApprovals: number, exactExecutionBlock?: number | null, status: { __typename: 'ProposalStatusCanceledByRuntime' } | { __typename: 'ProposalStatusCancelled' } | { __typename: 'ProposalStatusDeciding' } | { __typename: 'ProposalStatusDormant' } | { __typename: 'ProposalStatusExecuted' } | { __typename: 'ProposalStatusExecutionFailed' } | { __typename: 'ProposalStatusExpired' } | { __typename: 'ProposalStatusGracing' } | { __typename: 'ProposalStatusRejected' } | { __typename: 'ProposalStatusSlashed' } | { __typename: 'ProposalStatusVetoed' }, details: { __typename: 'AmendConstitutionProposalDetails' } | { __typename: 'CancelWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'CreateWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'DecreaseWorkingGroupLeadStakeProposalDetails' } | { __typename: 'FillWorkingGroupLeadOpeningProposalDetails' } | { __typename: 'FundingRequestProposalDetails' } | { __typename: 'RuntimeUpgradeProposalDetails' } | { __typename: 'SetCouncilBudgetIncrementProposalDetails' } | { __typename: 'SetCouncilorRewardProposalDetails' } | { __typename: 'SetInitialInvitationBalanceProposalDetails' } | { __typename: 'SetInitialInvitationCountProposalDetails' } | { __typename: 'SetMaxValidatorCountProposalDetails' } | { __typename: 'SetMembershipLeadInvitationQuotaProposalDetails' } | { __typename: 'SetMembershipPriceProposalDetails' } | { __typename: 'SetReferralCutProposalDetails' } | { __typename: 'SetWorkingGroupLeadRewardProposalDetails' } | { __typename: 'SignalProposalDetails' } | { __typename: 'SlashWorkingGroupLeadProposalDetails' } | { __typename: 'TerminateWorkingGroupLeadProposalDetails' } | { __typename: 'UpdateChannelPayoutsProposalDetails' } | { __typename: 'UpdateWorkingGroupBudgetProposalDetails', amount: string, group?: { __typename: 'WorkingGroup', id: string } | null } | { __typename: 'VetoProposalDetails' }, creator: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } };
 
@@ -37629,10 +37691,28 @@ export type GetWorkingGroupsQuery = { __typename: 'Query', workingGroups: Array<
 
 export type GetBudgetSpendingQueryVariables = Exact<{
   where?: InputMaybe<BudgetSpendingEventWhereInput>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
 export type GetBudgetSpendingQuery = { __typename: 'Query', budgetSpendingEvents: Array<{ __typename: 'BudgetSpendingEvent', id: string, groupId: string, reciever: string, amount: string, rationale?: string | null }> };
+
+export type GetBudgetSpendingEventsTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<BudgetSpendingEventWhereInput>;
+}>;
+
+
+export type GetBudgetSpendingEventsTotalCountQuery = { __typename: 'Query', budgetSpendingEventsConnection: { __typename: 'BudgetSpendingEventConnection', totalCount: number } };
+
+export type GetBudgetFundedEventsQueryVariables = Exact<{
+  where?: InputMaybe<BudgetFundedEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetBudgetFundedEventsQuery = { __typename: 'Query', budgetFundedEvents: Array<{ __typename: 'BudgetFundedEvent', id: string, amount: string, inBlock: number, createdAt: any }> };
 
 export type GetWorkersQueryVariables = Exact<{
   where?: InputMaybe<WorkerWhereInput>;
@@ -38421,6 +38501,26 @@ export const GetChannelsCountDocument = gql`
   }
 }
     `;
+export const GetCreatorPayoutRewardDocument = gql`
+    query GetCreatorPayoutReward($where: ChannelRewardClaimedEventWhereInput, $offset: Int, $limit: Int) {
+  channelRewardClaimedEvents(where: $where, limit: $limit, offset: $offset) {
+    amount
+    channel {
+      title
+      cumulativeRewardClaimed
+    }
+    channelId
+    inBlock
+  }
+}
+    `;
+export const GetCreatorPayoutRewardTotalCountDocument = gql`
+    query GetCreatorPayoutRewardTotalCount($where: ChannelRewardClaimedEventWhereInput) {
+  channelRewardClaimedEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const GetElectedCouncilsDocument = gql`
     query GetElectedCouncils($where: ElectedCouncilWhereInput, $orderBy: [ElectedCouncilOrderByInput!], $offset: Int, $limit: Int) {
   electedCouncils(
@@ -38434,6 +38534,49 @@ export const GetElectedCouncilsDocument = gql`
   }
 }
     ${ElectedCouncilFieldsFragmentDoc}`;
+export const GetCouncilRewardDocument = gql`
+    query GetCouncilReward($where: RewardPaymentEventWhereInput, $limit: Int, $offset: Int) {
+  rewardPaymentEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    paidBalance
+    inBlock
+    councilMember {
+      memberId
+    }
+  }
+}
+    `;
+export const GetCouncilRewardTotalCountDocument = gql`
+    query GetCouncilRewardTotalCount($where: RewardPaymentEventWhereInput) {
+  rewardPaymentEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+export const GetCouncilReFillDocument = gql`
+    query GetCouncilReFill($where: BudgetRefillEventWhereInput, $limit: Int, $offset: Int) {
+  budgetRefillEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    balance
+    inBlock
+  }
+}
+    `;
+export const GetCouncilReFillTotalCountDocument = gql`
+    query GetCouncilReFillTotalCount($where: BudgetRefillEventWhereInput) {
+  budgetRefillEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const GetElectionsDocument = gql`
     query GetElections($where: ElectionRoundWhereInput, $orderBy: [ElectionRoundOrderByInput!], $offset: Int, $limit: Int) {
   electionRounds(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
@@ -38466,8 +38609,8 @@ export const GetForumCategoriesCountDocument = gql`
   }
 }
     `;
-export const GetFundingProposalPaidDocument = gql`
-    query getFundingProposalPaid($where: RequestFundedEventWhereInput, $orderBy: [RequestFundedEventOrderByInput!], $offset: Int, $limit: Int) {
+export const GetFundingProposalsDocument = gql`
+    query getFundingProposals($where: RequestFundedEventWhereInput, $orderBy: [RequestFundedEventOrderByInput!], $offset: Int, $limit: Int) {
   requestFundedEvents(
     where: $where
     orderBy: $orderBy
@@ -38475,6 +38618,13 @@ export const GetFundingProposalPaidDocument = gql`
     limit: $limit
   ) {
     amount
+  }
+}
+    `;
+export const GetFundingProposalTotalCountDocument = gql`
+    query getFundingProposalTotalCount($where: RequestFundedEventWhereInput) {
+  requestFundedEventsConnection(where: $where) {
+    totalCount
   }
 }
     `;
@@ -38594,6 +38744,13 @@ export const GetProposalsDocument = gql`
   }
 }
     ${ProposalFieldsFragmentDoc}`;
+export const GetProposalTotalCountDocument = gql`
+    query getProposalTotalCount($where: ProposalWhereInput) {
+  proposalsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
 export const GetStorageDataObjectsDocument = gql`
     query GetStorageDataObjects($offset: Int, $limit: Int, $where: StorageDataObjectWhereInput) {
   storageDataObjects(
@@ -38778,12 +38935,39 @@ export const GetWorkingGroupsDocument = gql`
 }
     ${WorkingGroupDetailedFieldsFragmentDoc}`;
 export const GetBudgetSpendingDocument = gql`
-    query GetBudgetSpending($where: BudgetSpendingEventWhereInput) {
-  budgetSpendingEvents(where: $where) {
+    query GetBudgetSpending($where: BudgetSpendingEventWhereInput, $offset: Int, $limit: Int) {
+  budgetSpendingEvents(
+    where: $where
+    offset: $offset
+    limit: $limit
+    orderBy: createdAt_ASC
+  ) {
     ...BudgetSpendingEventFields
   }
 }
     ${BudgetSpendingEventFieldsFragmentDoc}`;
+export const GetBudgetSpendingEventsTotalCountDocument = gql`
+    query GetBudgetSpendingEventsTotalCount($where: BudgetSpendingEventWhereInput) {
+  budgetSpendingEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+export const GetBudgetFundedEventsDocument = gql`
+    query GetBudgetFundedEvents($where: BudgetFundedEventWhereInput, $limit: Int, $offset: Int) {
+  budgetFundedEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    id
+    amount
+    inBlock
+    createdAt
+  }
+}
+    `;
 export const GetWorkersDocument = gql`
     query GetWorkers($where: WorkerWhereInput, $offset: Int, $limit: Int) {
   workers(where: $where, offset: $offset, limit: $limit) {
@@ -39065,8 +39249,26 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetChannelsCount(variables?: GetChannelsCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetChannelsCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetChannelsCountQuery>(GetChannelsCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetChannelsCount', 'query');
     },
+    GetCreatorPayoutReward(variables?: GetCreatorPayoutRewardQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCreatorPayoutRewardQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCreatorPayoutRewardQuery>(GetCreatorPayoutRewardDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCreatorPayoutReward', 'query');
+    },
+    GetCreatorPayoutRewardTotalCount(variables?: GetCreatorPayoutRewardTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCreatorPayoutRewardTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCreatorPayoutRewardTotalCountQuery>(GetCreatorPayoutRewardTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCreatorPayoutRewardTotalCount', 'query');
+    },
     GetElectedCouncils(variables?: GetElectedCouncilsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetElectedCouncilsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetElectedCouncilsQuery>(GetElectedCouncilsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetElectedCouncils', 'query');
+    },
+    GetCouncilReward(variables?: GetCouncilRewardQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCouncilRewardQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCouncilRewardQuery>(GetCouncilRewardDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCouncilReward', 'query');
+    },
+    GetCouncilRewardTotalCount(variables?: GetCouncilRewardTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCouncilRewardTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCouncilRewardTotalCountQuery>(GetCouncilRewardTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCouncilRewardTotalCount', 'query');
+    },
+    GetCouncilReFill(variables?: GetCouncilReFillQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCouncilReFillQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCouncilReFillQuery>(GetCouncilReFillDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCouncilReFill', 'query');
+    },
+    GetCouncilReFillTotalCount(variables?: GetCouncilReFillTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCouncilReFillTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetCouncilReFillTotalCountQuery>(GetCouncilReFillTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCouncilReFillTotalCount', 'query');
     },
     GetElections(variables?: GetElectionsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetElectionsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetElectionsQuery>(GetElectionsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetElections', 'query');
@@ -39080,8 +39282,11 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetForumCategoriesCount(variables?: GetForumCategoriesCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetForumCategoriesCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetForumCategoriesCountQuery>(GetForumCategoriesCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetForumCategoriesCount', 'query');
     },
-    getFundingProposalPaid(variables?: GetFundingProposalPaidQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetFundingProposalPaidQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<GetFundingProposalPaidQuery>(GetFundingProposalPaidDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getFundingProposalPaid', 'query');
+    getFundingProposals(variables?: GetFundingProposalsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetFundingProposalsQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetFundingProposalsQuery>(GetFundingProposalsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getFundingProposals', 'query');
+    },
+    getFundingProposalTotalCount(variables?: GetFundingProposalTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetFundingProposalTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetFundingProposalTotalCountQuery>(GetFundingProposalTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getFundingProposalTotalCount', 'query');
     },
     GetMembersCount(variables?: GetMembersCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetMembersCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetMembersCountQuery>(GetMembersCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetMembersCount', 'query');
@@ -39118,6 +39323,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     getProposals(variables?: GetProposalsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetProposalsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetProposalsQuery>(GetProposalsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getProposals', 'query');
+    },
+    getProposalTotalCount(variables?: GetProposalTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetProposalTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetProposalTotalCountQuery>(GetProposalTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'getProposalTotalCount', 'query');
     },
     GetStorageDataObjects(variables?: GetStorageDataObjectsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetStorageDataObjectsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetStorageDataObjectsQuery>(GetStorageDataObjectsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetStorageDataObjects', 'query');
@@ -39172,6 +39380,12 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetBudgetSpending(variables?: GetBudgetSpendingQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetBudgetSpendingQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetBudgetSpendingQuery>(GetBudgetSpendingDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetBudgetSpending', 'query');
+    },
+    GetBudgetSpendingEventsTotalCount(variables?: GetBudgetSpendingEventsTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetBudgetSpendingEventsTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetBudgetSpendingEventsTotalCountQuery>(GetBudgetSpendingEventsTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetBudgetSpendingEventsTotalCount', 'query');
+    },
+    GetBudgetFundedEvents(variables?: GetBudgetFundedEventsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetBudgetFundedEventsQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetBudgetFundedEventsQuery>(GetBudgetFundedEventsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetBudgetFundedEvents', 'query');
     },
     GetWorkers(variables?: GetWorkersQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkersQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetWorkersQuery>(GetWorkersDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkers', 'query');

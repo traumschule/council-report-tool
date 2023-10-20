@@ -1,4 +1,4 @@
-query getFundingProposalPaid(
+query getFundingProposals(
   $where: RequestFundedEventWhereInput
   $orderBy: [RequestFundedEventOrderByInput!]
   $offset: Int
@@ -11,5 +11,15 @@ query getFundingProposalPaid(
     limit: $limit
   ) {
     amount
+  }
+}
+
+query getFundingProposalTotalCount(
+  $where: RequestFundedEventWhereInput
+){
+  requestFundedEventsConnection(
+    where:$where
+  ){
+    totalCount
   }
 }

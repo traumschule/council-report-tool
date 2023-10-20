@@ -20,6 +20,22 @@ export type GetChannelsCountQueryVariables = Types.Exact<{
 
 export type GetChannelsCountQuery = { __typename: 'Query', channelsConnection: { __typename: 'ChannelConnection', totalCount: number } };
 
+export type GetCreatorPayoutRewardQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.ChannelRewardClaimedEventWhereInput>;
+  offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+}>;
+
+
+export type GetCreatorPayoutRewardQuery = { __typename: 'Query', channelRewardClaimedEvents: Array<{ __typename: 'ChannelRewardClaimedEvent', amount: string, channelId: string, inBlock: number, channel: { __typename: 'Channel', title?: string | null, cumulativeRewardClaimed?: string | null } }> };
+
+export type GetCreatorPayoutRewardTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.ChannelRewardClaimedEventWhereInput>;
+}>;
+
+
+export type GetCreatorPayoutRewardTotalCountQuery = { __typename: 'Query', channelRewardClaimedEventsConnection: { __typename: 'ChannelRewardClaimedEventConnection', totalCount: number } };
+
 export type FullChannelFieldsFragment = { __typename: 'Channel', activeVideosCounter: number, description?: string | null, isPublic?: boolean | null, isCensored: boolean, id: string, title?: string | null, createdAt: any, rewardAccount: string, channelStateBloatBond: string, language?: { __typename: 'Language', id: string, iso: string } | null, ownerMember?: { __typename: 'Membership', id: string, handle: string, metadata: { __typename: 'MemberMetadata', about?: string | null, avatar?: { __typename: 'AvatarObject', avatarObject?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null } | { __typename: 'AvatarUri', avatarUri: string } | null } } | null, coverPhoto?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null, avatarPhoto?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null };
 
 export type BasicMembershipFieldsFragment = { __typename: 'Membership', id: string, handle: string, metadata: { __typename: 'MemberMetadata', about?: string | null, avatar?: { __typename: 'AvatarObject', avatarObject?: { __typename: 'StorageDataObject', id: string, createdAt: any, size: string, isAccepted: boolean, ipfsHash: string, storageBag: { __typename: 'StorageBag', id: string }, type: { __typename: 'DataObjectTypeChannelAvatar' } | { __typename: 'DataObjectTypeChannelCoverPhoto' } | { __typename: 'DataObjectTypeChannelPayoutsPayload' } | { __typename: 'DataObjectTypeUnknown' } | { __typename: 'DataObjectTypeVideoMedia' } | { __typename: 'DataObjectTypeVideoSubtitle' } | { __typename: 'DataObjectTypeVideoThumbnail' } } | null } | { __typename: 'AvatarUri', avatarUri: string } | null } };
@@ -168,3 +184,81 @@ export function useGetChannelsCountLazyQuery(baseOptions?: Apollo.LazyQueryHookO
 export type GetChannelsCountQueryHookResult = ReturnType<typeof useGetChannelsCountQuery>;
 export type GetChannelsCountLazyQueryHookResult = ReturnType<typeof useGetChannelsCountLazyQuery>;
 export type GetChannelsCountQueryResult = Apollo.QueryResult<GetChannelsCountQuery, GetChannelsCountQueryVariables>;
+export const GetCreatorPayoutRewardDocument = gql`
+    query GetCreatorPayoutReward($where: ChannelRewardClaimedEventWhereInput, $offset: Int, $limit: Int) {
+  channelRewardClaimedEvents(where: $where, limit: $limit, offset: $offset) {
+    amount
+    channel {
+      title
+      cumulativeRewardClaimed
+    }
+    channelId
+    inBlock
+  }
+}
+    `;
+
+/**
+ * __useGetCreatorPayoutRewardQuery__
+ *
+ * To run a query within a React component, call `useGetCreatorPayoutRewardQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCreatorPayoutRewardQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCreatorPayoutRewardQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *      offset: // value for 'offset'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useGetCreatorPayoutRewardQuery(baseOptions?: Apollo.QueryHookOptions<GetCreatorPayoutRewardQuery, GetCreatorPayoutRewardQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCreatorPayoutRewardQuery, GetCreatorPayoutRewardQueryVariables>(GetCreatorPayoutRewardDocument, options);
+      }
+export function useGetCreatorPayoutRewardLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCreatorPayoutRewardQuery, GetCreatorPayoutRewardQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCreatorPayoutRewardQuery, GetCreatorPayoutRewardQueryVariables>(GetCreatorPayoutRewardDocument, options);
+        }
+export type GetCreatorPayoutRewardQueryHookResult = ReturnType<typeof useGetCreatorPayoutRewardQuery>;
+export type GetCreatorPayoutRewardLazyQueryHookResult = ReturnType<typeof useGetCreatorPayoutRewardLazyQuery>;
+export type GetCreatorPayoutRewardQueryResult = Apollo.QueryResult<GetCreatorPayoutRewardQuery, GetCreatorPayoutRewardQueryVariables>;
+export const GetCreatorPayoutRewardTotalCountDocument = gql`
+    query GetCreatorPayoutRewardTotalCount($where: ChannelRewardClaimedEventWhereInput) {
+  channelRewardClaimedEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetCreatorPayoutRewardTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetCreatorPayoutRewardTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCreatorPayoutRewardTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetCreatorPayoutRewardTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetCreatorPayoutRewardTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetCreatorPayoutRewardTotalCountQuery, GetCreatorPayoutRewardTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetCreatorPayoutRewardTotalCountQuery, GetCreatorPayoutRewardTotalCountQueryVariables>(GetCreatorPayoutRewardTotalCountDocument, options);
+      }
+export function useGetCreatorPayoutRewardTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetCreatorPayoutRewardTotalCountQuery, GetCreatorPayoutRewardTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetCreatorPayoutRewardTotalCountQuery, GetCreatorPayoutRewardTotalCountQueryVariables>(GetCreatorPayoutRewardTotalCountDocument, options);
+        }
+export type GetCreatorPayoutRewardTotalCountQueryHookResult = ReturnType<typeof useGetCreatorPayoutRewardTotalCountQuery>;
+export type GetCreatorPayoutRewardTotalCountLazyQueryHookResult = ReturnType<typeof useGetCreatorPayoutRewardTotalCountLazyQuery>;
+export type GetCreatorPayoutRewardTotalCountQueryResult = Apollo.QueryResult<GetCreatorPayoutRewardTotalCountQuery, GetCreatorPayoutRewardTotalCountQueryVariables>;

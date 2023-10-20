@@ -21,6 +21,15 @@ query getProposals(
   }
 }
 
+
+query getProposalTotalCount(
+  $where: ProposalWhereInput
+) {
+  proposalsConnection(where:$where){
+    totalCount
+  }
+}
+
 fragment ProposalFields on Proposal {
   id
   title

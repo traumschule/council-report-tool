@@ -32,10 +32,28 @@ export type GetWorkingGroupsQuery = { __typename: 'Query', workingGroups: Array<
 
 export type GetBudgetSpendingQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.BudgetSpendingEventWhereInput>;
+  offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 
 export type GetBudgetSpendingQuery = { __typename: 'Query', budgetSpendingEvents: Array<{ __typename: 'BudgetSpendingEvent', id: string, groupId: string, reciever: string, amount: string, rationale?: string | null }> };
+
+export type GetBudgetSpendingEventsTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.BudgetSpendingEventWhereInput>;
+}>;
+
+
+export type GetBudgetSpendingEventsTotalCountQuery = { __typename: 'Query', budgetSpendingEventsConnection: { __typename: 'BudgetSpendingEventConnection', totalCount: number } };
+
+export type GetBudgetFundedEventsQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.BudgetFundedEventWhereInput>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+}>;
+
+
+export type GetBudgetFundedEventsQuery = { __typename: 'Query', budgetFundedEvents: Array<{ __typename: 'BudgetFundedEvent', id: string, amount: string, inBlock: number, createdAt: any }> };
 
 export type GetWorkersQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.WorkerWhereInput>;
@@ -646,8 +664,13 @@ export type GetWorkingGroupsQueryHookResult = ReturnType<typeof useGetWorkingGro
 export type GetWorkingGroupsLazyQueryHookResult = ReturnType<typeof useGetWorkingGroupsLazyQuery>;
 export type GetWorkingGroupsQueryResult = Apollo.QueryResult<GetWorkingGroupsQuery, GetWorkingGroupsQueryVariables>;
 export const GetBudgetSpendingDocument = gql`
-    query GetBudgetSpending($where: BudgetSpendingEventWhereInput) {
-  budgetSpendingEvents(where: $where) {
+    query GetBudgetSpending($where: BudgetSpendingEventWhereInput, $offset: Int, $limit: Int) {
+  budgetSpendingEvents(
+    where: $where
+    offset: $offset
+    limit: $limit
+    orderBy: createdAt_ASC
+  ) {
     ...BudgetSpendingEventFields
   }
 }
@@ -666,6 +689,8 @@ export const GetBudgetSpendingDocument = gql`
  * const { data, loading, error } = useGetBudgetSpendingQuery({
  *   variables: {
  *      where: // value for 'where'
+ *      offset: // value for 'offset'
+ *      limit: // value for 'limit'
  *   },
  * });
  */
@@ -680,6 +705,86 @@ export function useGetBudgetSpendingLazyQuery(baseOptions?: Apollo.LazyQueryHook
 export type GetBudgetSpendingQueryHookResult = ReturnType<typeof useGetBudgetSpendingQuery>;
 export type GetBudgetSpendingLazyQueryHookResult = ReturnType<typeof useGetBudgetSpendingLazyQuery>;
 export type GetBudgetSpendingQueryResult = Apollo.QueryResult<GetBudgetSpendingQuery, GetBudgetSpendingQueryVariables>;
+export const GetBudgetSpendingEventsTotalCountDocument = gql`
+    query GetBudgetSpendingEventsTotalCount($where: BudgetSpendingEventWhereInput) {
+  budgetSpendingEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetBudgetSpendingEventsTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetBudgetSpendingEventsTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetBudgetSpendingEventsTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetBudgetSpendingEventsTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetBudgetSpendingEventsTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetBudgetSpendingEventsTotalCountQuery, GetBudgetSpendingEventsTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetBudgetSpendingEventsTotalCountQuery, GetBudgetSpendingEventsTotalCountQueryVariables>(GetBudgetSpendingEventsTotalCountDocument, options);
+      }
+export function useGetBudgetSpendingEventsTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetBudgetSpendingEventsTotalCountQuery, GetBudgetSpendingEventsTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetBudgetSpendingEventsTotalCountQuery, GetBudgetSpendingEventsTotalCountQueryVariables>(GetBudgetSpendingEventsTotalCountDocument, options);
+        }
+export type GetBudgetSpendingEventsTotalCountQueryHookResult = ReturnType<typeof useGetBudgetSpendingEventsTotalCountQuery>;
+export type GetBudgetSpendingEventsTotalCountLazyQueryHookResult = ReturnType<typeof useGetBudgetSpendingEventsTotalCountLazyQuery>;
+export type GetBudgetSpendingEventsTotalCountQueryResult = Apollo.QueryResult<GetBudgetSpendingEventsTotalCountQuery, GetBudgetSpendingEventsTotalCountQueryVariables>;
+export const GetBudgetFundedEventsDocument = gql`
+    query GetBudgetFundedEvents($where: BudgetFundedEventWhereInput, $limit: Int, $offset: Int) {
+  budgetFundedEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    id
+    amount
+    inBlock
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetBudgetFundedEventsQuery__
+ *
+ * To run a query within a React component, call `useGetBudgetFundedEventsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetBudgetFundedEventsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetBudgetFundedEventsQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useGetBudgetFundedEventsQuery(baseOptions?: Apollo.QueryHookOptions<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>(GetBudgetFundedEventsDocument, options);
+      }
+export function useGetBudgetFundedEventsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>(GetBudgetFundedEventsDocument, options);
+        }
+export type GetBudgetFundedEventsQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsQuery>;
+export type GetBudgetFundedEventsLazyQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsLazyQuery>;
+export type GetBudgetFundedEventsQueryResult = Apollo.QueryResult<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>;
 export const GetWorkersDocument = gql`
     query GetWorkers($where: WorkerWhereInput, $offset: Int, $limit: Int) {
   workers(where: $where, offset: $offset, limit: $limit) {
