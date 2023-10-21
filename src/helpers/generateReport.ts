@@ -65,7 +65,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
       createdAt_lte: blockTimestamp,
     },
   });
-  // const { endCount } = await getChannelStatus(blockNumber);
+  const { endCount } = await getChannelStatus(blockNumber);
   const {
     nftIssuedEventsConnection: { totalCount: nftCount },
   } = await GetNftIssuedCount({
@@ -74,7 +74,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   let content = {
     videoCount,
     channelCount,
-    // nonEmptyChannelCount: endCount,
+    nonEmptyChannelCount: endCount,
     nftCount,
     totalStorage: 0
   };
@@ -248,11 +248,17 @@ export async function generateReport2(
   const wgSpendingProposal = await getWGSpendingProposal(startBlockTimestamp, endBlockTimestamp);
   const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
   const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
-  Object.keys(GroupIdToGroupParam)
+  const promises = Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
-      wgBudgets[_group as GroupIdName].startBudget = wgBudget[_group as GroupIdName].startBudget;
-      wgBudgets[_group as GroupIdName].endBudget = wgBudget[_group as GroupIdName].endBudget;
-      let leadSalary = 0;
+      let wgData = {
+        startBudget: wgBudget[_group as GroupIdName].startBudget,
+        endBudget: wgBudget[_group as GroupIdName].endBudget,
+        totalRefilled: 0,
+        totalSpending: 0,
+        leadSalary: 0,
+        workerSalary: 0,
+        spendingProposal: 0
+      }
       const leadMember = wgSalary[_group as GroupIdName]
         .find((a) => {
           return a.isLead == true;
@@ -260,36 +266,39 @@ export async function generateReport2(
 
       if (leadMember) {
         const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
-        leadSalary += leadMember.reward * (endBlockNumber - startBlockNumber) + leadSpending;
+        wgData.leadSalary += toJoy(new BN(leadMember.reward * (endBlockNumber - startBlockNumber))) + leadSpending;
         const leadCouncilReward = councilReward
           .filter((c) => {
             return Number(c.memberId) == leadMember.memeberId
           })
           .reduce((a, b) => a + b.amount, 0);
-        leadSalary += leadCouncilReward;
+        wgData.leadSalary += leadCouncilReward;
       }
-      wgBudgets[_group as GroupIdName].leadSalary = leadSalary;
-      let workSalary = wgSalary[_group as GroupIdName]
+      wgData.workerSalary = wgSalary[_group as GroupIdName]
         .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0);
-      wgBudgets[_group as GroupIdName].totalSpending = workSalary
+      wgData.workerSalary = toJoy(new BN(wgData.workerSalary));
+      wgData.totalSpending = wgData.workerSalary;
       if (wgSpending[_group as GroupIdName]) {
-        wgBudgets[_group as GroupIdName].workerSalary = workSalary + wgSpending[_group as GroupIdName];
-        wgBudgets[_group as GroupIdName].totalSpending += wgSpending[_group as GroupIdName];
+
+        wgData.workerSalary += wgSpending[_group as GroupIdName];
+        wgData.totalSpending += wgSpending[_group as GroupIdName];
       }
       if (wgSpendingProposal[_group as GroupIdName]) {
-        wgBudgets[_group as GroupIdName].spendingProposal = wgSpendingProposal[_group as GroupIdName];
-        wgBudgets[_group as GroupIdName].totalSpending += wgSpendingProposal[_group as GroupIdName];
+        wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];
+        wgData.totalSpending += wgSpendingProposal[_group as GroupIdName];
       }
       if (wgRefillProposal[_group as GroupIdName]) {
-        wgBudgets[_group as GroupIdName].totalRefilled = wgRefillProposal[_group as GroupIdName];
+        wgData.totalRefilled = wgRefillProposal[_group as GroupIdName];
       }
+      wgBudgets[_group as GroupIdName] = wgData;
     });
-
+  await Promise.all(promises);
+  console.log("wgbudgets", wgBudgets)
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
-  // const videoStatus = await getVideoStatus(
-  //   startBlockNumber,
-  //   endBlockNumber
-  // );
+  const videoStatus = await getVideoStatus(
+    startBlockNumber,
+    endBlockNumber
+  );
   if (storageFlag) {
     const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
     storageStatus.startBlock = startStorage;
@@ -299,16 +308,16 @@ export async function generateReport2(
   }
 
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
-  // const { startCount, endCount } = await getChannelStatus(
-  //   endBlockNumber,
-  //   startBlockTimestamp
-  // );
-  // const nonEmptyChannelStatus = {
-  //   startCount,
-  //   endCount,
-  //   growthQty: (endCount - startCount),
-  //   growth: (endCount / startCount - 1) * 100
-  // }
+  const { startCount, endCount } = await getChannelStatus(
+    endBlockNumber,
+    startBlockTimestamp
+  );
+  const nonEmptyChannelStatus = {
+    startCount,
+    endCount,
+    growthQty: (endCount - startCount),
+    growth: (endCount / startCount - 1) * 100
+  }
 
   // 11. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#video-nfts
   const videoNftStatus = await getVideoNftStatus(
@@ -376,8 +385,8 @@ export async function generateReport2(
     daoSpending,
     councilBudget,
     wgBudgets,
-    // videoStatus,
-    // nonEmptyChannelStatus,
+    videoStatus,
+    nonEmptyChannelStatus,
     videoNftStatus,
     membershipStatus,
     storageStatus,
@@ -523,9 +532,14 @@ export async function generateReport4(
   const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
   Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
-      wgBudgets[_group as GroupIdName].startWGBudget = wgBudget[_group as GroupIdName].startBudget;
-      wgBudgets[_group as GroupIdName].endWGBudget = wgBudget[_group as GroupIdName].endBudget;
-      let leadSalary = 0;
+      let wgData = {
+        startWGBudget: wgBudget[_group as GroupIdName].startBudget,
+        endWGBudget: wgBudget[_group as GroupIdName].endBudget,
+        discretionarySpending: 0,
+        spendingProposal: 0,
+        workerRewards: 0,
+        leadRewards: 0,
+      }
       const leadMember = wgSalary[_group as GroupIdName]
         .find((a) => {
           return a.isLead == true;
@@ -533,23 +547,25 @@ export async function generateReport4(
 
       if (leadMember) {
         const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
-        leadSalary += leadMember.reward * (endBlockNumber - startBlockNumber) + leadSpending;
+        wgData.leadRewards += toJoy(new BN(leadMember.reward * (endBlockNumber - startBlockNumber))) + leadSpending;
         const leadCouncilReward = councilReward
           .filter((c) => {
             return Number(c.memberId) == leadMember.memeberId
           })
           .reduce((a, b) => a + b.amount, 0);
-        leadSalary += leadCouncilReward;
+        wgData.leadRewards += leadCouncilReward;
       }
-      wgBudgets[_group as GroupIdName].leadRewards = leadSalary;
-      let workSalary = wgSalary[_group as GroupIdName]
-        .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0);
+      wgData.workerRewards = toJoy(new BN(
+        wgSalary[_group as GroupIdName]
+          .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0)
+      ));
       if (wgSpending[_group as GroupIdName]) {
-        wgBudgets[_group as GroupIdName].workerRewards = workSalary + wgSpending[_group as GroupIdName];
+        wgData.workerRewards += wgSpending[_group as GroupIdName];
       }
       if (wgSpendingProposal[_group as GroupIdName]) {
-        wgBudgets[_group as GroupIdName].spendingProposal = wgSpendingProposal[_group as GroupIdName];
+        wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];
       }
+      wgBudgets[_group as GroupIdName] = wgData;
     });
 
   return {
