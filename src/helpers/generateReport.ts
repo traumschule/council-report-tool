@@ -45,8 +45,6 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   const blockTimestamp = new Date(
     (await (await api.at(blockHash)).query.timestamp.now()).toNumber()
   );
-  const councilBudget = await getCouncilReward(4407985, 4507985);
-  console.log("council budget", councilBudget);
   const general = {
     block: blockNumber,
     hash: blockHash,
@@ -65,7 +63,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
       createdAt_lte: blockTimestamp,
     },
   });
-  const { endCount } = await getChannelStatus(blockNumber);
+  // const { endCount } = await getChannelStatus(blockNumber);
   const {
     nftIssuedEventsConnection: { totalCount: nftCount },
   } = await GetNftIssuedCount({
@@ -74,7 +72,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   let content = {
     videoCount,
     channelCount,
-    nonEmptyChannelCount: endCount,
+    // nonEmptyChannelCount: endCount,
     nftCount,
     totalStorage: 0
   };
@@ -293,7 +291,6 @@ export async function generateReport2(
       wgBudgets[_group as GroupIdName] = wgData;
     });
   await Promise.all(promises);
-  console.log("wgbudgets", wgBudgets)
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
   const videoStatus = await getVideoStatus(
     startBlockNumber,

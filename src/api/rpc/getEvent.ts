@@ -1,5 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
-import { EventRecord, Balance, AccountId, Extrinsic } from "@polkadot/types/interfaces";
+import { EventRecord, Balance } from "@polkadot/types/interfaces";
 import { Vec } from "@polkadot/types";
 import { GenericEventData } from "@polkadot/types/generic/Event";
 import { CacheEvent } from "./type";
