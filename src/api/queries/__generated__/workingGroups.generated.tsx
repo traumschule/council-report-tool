@@ -6,7 +6,7 @@ import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type WorkingGroupMetadataFieldsFragment = { __typename: 'WorkingGroupMetadata', about?: string | null, description?: string | null, status?: string | null, statusMessage?: string | null };
 
-export type WorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } };
+export type WorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, rewardAccount: string, roleAccount: string, stakeAccount: string, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } };
 
 export type PastWorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, createdAt: any, updatedAt?: any | null, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft', workerExitedEvent?: { __typename: 'WorkerExitedEvent', createdAt: any, inBlock: number, network: Types.Network } | null } | { __typename: 'WorkerStatusTerminated', terminatedWorkerEvent?: { __typename: 'TerminatedWorkerEvent', createdAt: any, inBlock: number, network: Types.Network } | null }, entry: { __typename: 'OpeningFilledEvent', createdAt: any, inBlock: number, network: Types.Network } };
 
@@ -55,6 +55,13 @@ export type GetBudgetFundedEventsQueryVariables = Types.Exact<{
 
 export type GetBudgetFundedEventsQuery = { __typename: 'Query', budgetFundedEvents: Array<{ __typename: 'BudgetFundedEvent', id: string, amount: string, inBlock: number, createdAt: any }> };
 
+export type GetBudgetFundedEventsTotalCountQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.BudgetFundedEventWhereInput>;
+}>;
+
+
+export type GetBudgetFundedEventsTotalCountQuery = { __typename: 'Query', budgetFundedEventsConnection: { __typename: 'BudgetFundedEventConnection', totalCount: number } };
+
 export type GetWorkersQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.WorkerWhereInput>;
   offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
@@ -62,7 +69,7 @@ export type GetWorkersQueryVariables = Types.Exact<{
 }>;
 
 
-export type GetWorkersQuery = { __typename: 'Query', workers: Array<{ __typename: 'Worker', id: string, runtimeId: number, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } }> };
+export type GetWorkersQuery = { __typename: 'Query', workers: Array<{ __typename: 'Worker', id: string, runtimeId: number, rewardAccount: string, roleAccount: string, stakeAccount: string, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Types.Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } }> };
 
 export type GetPastWorkersQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.WorkerWhereInput>;
@@ -384,6 +391,9 @@ export const WorkerFieldsFragmentDoc = gql`
   status {
     __typename
   }
+  rewardAccount
+  roleAccount
+  stakeAccount
   applicationId
   isLead
   rewardPerBlock
@@ -785,6 +795,41 @@ export function useGetBudgetFundedEventsLazyQuery(baseOptions?: Apollo.LazyQuery
 export type GetBudgetFundedEventsQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsQuery>;
 export type GetBudgetFundedEventsLazyQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsLazyQuery>;
 export type GetBudgetFundedEventsQueryResult = Apollo.QueryResult<GetBudgetFundedEventsQuery, GetBudgetFundedEventsQueryVariables>;
+export const GetBudgetFundedEventsTotalCountDocument = gql`
+    query GetBudgetFundedEventsTotalCount($where: BudgetFundedEventWhereInput) {
+  budgetFundedEventsConnection(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+/**
+ * __useGetBudgetFundedEventsTotalCountQuery__
+ *
+ * To run a query within a React component, call `useGetBudgetFundedEventsTotalCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetBudgetFundedEventsTotalCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetBudgetFundedEventsTotalCountQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *   },
+ * });
+ */
+export function useGetBudgetFundedEventsTotalCountQuery(baseOptions?: Apollo.QueryHookOptions<GetBudgetFundedEventsTotalCountQuery, GetBudgetFundedEventsTotalCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetBudgetFundedEventsTotalCountQuery, GetBudgetFundedEventsTotalCountQueryVariables>(GetBudgetFundedEventsTotalCountDocument, options);
+      }
+export function useGetBudgetFundedEventsTotalCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetBudgetFundedEventsTotalCountQuery, GetBudgetFundedEventsTotalCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetBudgetFundedEventsTotalCountQuery, GetBudgetFundedEventsTotalCountQueryVariables>(GetBudgetFundedEventsTotalCountDocument, options);
+        }
+export type GetBudgetFundedEventsTotalCountQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsTotalCountQuery>;
+export type GetBudgetFundedEventsTotalCountLazyQueryHookResult = ReturnType<typeof useGetBudgetFundedEventsTotalCountLazyQuery>;
+export type GetBudgetFundedEventsTotalCountQueryResult = Apollo.QueryResult<GetBudgetFundedEventsTotalCountQuery, GetBudgetFundedEventsTotalCountQueryVariables>;
 export const GetWorkersDocument = gql`
     query GetWorkers($where: WorkerWhereInput, $offset: Int, $limit: Int) {
   workers(where: $where, offset: $offset, limit: $limit) {

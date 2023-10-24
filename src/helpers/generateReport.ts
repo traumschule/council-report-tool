@@ -163,7 +163,7 @@ export async function generateReport2(
     timestamp: endBlockTimestamp,
   };
 
-
+  await getWGSpendingProposal(startBlockNumber, endBlockNumber);
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
   const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
@@ -243,7 +243,7 @@ export async function generateReport2(
       spendingProposal: number;
     };
   };
-  const wgSpendingProposal = await getWGSpendingProposal(startBlockTimestamp, endBlockTimestamp);
+  const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
   const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
   const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
   const promises = Object.keys(GroupIdToGroupParam)
@@ -524,7 +524,7 @@ export async function generateReport4(
       leadRewards: number;
     }
   }
-  const wgSpendingProposal = await getWGSpendingProposal(startBlockTimestamp, endBlockTimestamp);
+  const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
   const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
   const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
   Object.keys(GroupIdToGroupParam)

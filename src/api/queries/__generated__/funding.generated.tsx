@@ -11,7 +11,7 @@ export type GetFundingProposalsQueryVariables = Types.Exact<{
 }>;
 
 
-export type GetFundingProposalsQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string }> };
+export type GetFundingProposalsQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string, account: string, inBlock: number }> };
 
 export type GetFundingProposalTotalCountQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.RequestFundedEventWhereInput>;
@@ -30,6 +30,8 @@ export const GetFundingProposalsDocument = gql`
     limit: $limit
   ) {
     amount
+    account
+    inBlock
   }
 }
     `;

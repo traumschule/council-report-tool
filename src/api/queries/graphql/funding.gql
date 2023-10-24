@@ -11,6 +11,8 @@ query getFundingProposals(
     limit: $limit
   ) {
     amount
+    account
+    inBlock
   }
 }
 

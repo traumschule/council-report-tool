@@ -18,6 +18,9 @@ fragment WorkerFields on Worker {
   status {
     __typename
   }
+  rewardAccount
+  roleAccount
+  stakeAccount
   applicationId
   isLead
   rewardPerBlock
@@ -153,6 +156,11 @@ query GetBudgetFundedEvents($where:BudgetFundedEventWhereInput,$limit:Int,$offse
   }
 }
 
+query GetBudgetFundedEventsTotalCount($where:BudgetFundedEventWhereInput){
+  budgetFundedEventsConnection(where:$where){
+    totalCount
+  }
+}
 
 
 query GetWorkers($where: WorkerWhereInput, $offset: Int, $limit: Int) {

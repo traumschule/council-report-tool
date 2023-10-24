@@ -751,45 +751,49 @@ export const getWGRefillProposal = async (start: Date, end: Date) => {
 
 // wg spending proposal budget
 
-export const getWGSpendingProposal = async (start: Date, end: Date) => {
-  const { getProposals, getProposalTotalCount } = getSdk(client);
-  const { proposalsConnection: { totalCount } } = await getProposalTotalCount({
+export const getWGSpendingProposal = async (start: number, end: number) => {
+  const { getFundingProposalTotalCount, getFundingProposals, GetWorkersCount, GetWorkers } = getSdk(client);
+  const { requestFundedEventsConnection: { totalCount } } = await getFundingProposalTotalCount({
     where: {
-      isFinalized_eq: true,
-      details_json: { isTypeOf_eq: "FundingRequestProposalDetails" },
-      status_json: { isTypeOf_eq: "ProposalStatusExecuted" },
-      createdAt_gte: start,
-      createdAt_lte: end,
+      inBlock_gte: start,
+      inBlock_lte: end
     }
   });
   const spendingProposal = {} as {
-    [key in WorkingGroup["id"]]: number;
+    [key in GroupIdName]: 0;
   };
-  const { proposals } = await getProposals({
+  const { requestFundedEvents } = await getFundingProposals({
     where: {
-      isFinalized_eq: true,
-      details_json: { isTypeOf_eq: "FundingRequestProposalDetails" },
-      status_json: { isTypeOf_eq: "ProposalStatusExecuted" },
-      createdAt_gte: start,
-      createdAt_lte: end,
+      inBlock_gte: start,
+      inBlock_lte: end
     },
     limit: totalCount
   });
-  for (const proposal of proposals) {
-    const {
-      group: { id },
-      amount,
-    } = proposal.details as {
-      __typename: string;
-      group: {
-        id: WorkingGroup["id"];
-        __typename: string;
-      };
-      amount: string;
-    };
-    spendingProposal[id] =
-      toJoy(new BN(amount)) + (isNaN(spendingProposal[id]) ? 0 : spendingProposal[id]);
-  }
+  const promises = Object.keys(GroupIdToGroupParam).map(async (_groupId) => {
+    const { workersConnection: { totalCount: workerCount } } = await GetWorkersCount({
+      where: {
+        groupId_eq: _groupId,
+        isActive_eq: true
+      }
+    });
+    const { workers } = await GetWorkers({
+      where: {
+        groupId_eq: _groupId,
+        isActive_eq: true
+      },
+      limit: workerCount
+    });
+    workers.map((w) => {
+      const budget = requestFundedEvents
+        .filter((a) => {
+          return a.account == w.rewardAccount;
+        })
+        .reduce((a, b) => a + toJoy(new BN(b.amount)), 0);
+      if (budget)
+        spendingProposal[_groupId as GroupIdName] += budget;
+    });
+  });
+  await Promise.all(promises);
   return spendingProposal;
 }
 

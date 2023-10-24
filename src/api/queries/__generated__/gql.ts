@@ -37413,7 +37413,7 @@ export type GetFundingProposalsQueryVariables = Exact<{
 }>;
 
 
-export type GetFundingProposalsQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string }> };
+export type GetFundingProposalsQuery = { __typename: 'Query', requestFundedEvents: Array<{ __typename: 'RequestFundedEvent', amount: string, account: string, inBlock: number }> };
 
 export type GetFundingProposalTotalCountQueryVariables = Exact<{
   where?: InputMaybe<RequestFundedEventWhereInput>;
@@ -37665,7 +37665,7 @@ export type GetOpeningFilledTotalCountQuery = { __typename: 'Query', openingFill
 
 export type WorkingGroupMetadataFieldsFragment = { __typename: 'WorkingGroupMetadata', about?: string | null, description?: string | null, status?: string | null, statusMessage?: string | null };
 
-export type WorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } };
+export type WorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, rewardAccount: string, roleAccount: string, stakeAccount: string, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } };
 
 export type PastWorkerFieldsFragment = { __typename: 'Worker', id: string, runtimeId: number, createdAt: any, updatedAt?: any | null, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft', workerExitedEvent?: { __typename: 'WorkerExitedEvent', createdAt: any, inBlock: number, network: Network } | null } | { __typename: 'WorkerStatusTerminated', terminatedWorkerEvent?: { __typename: 'TerminatedWorkerEvent', createdAt: any, inBlock: number, network: Network } | null }, entry: { __typename: 'OpeningFilledEvent', createdAt: any, inBlock: number, network: Network } };
 
@@ -37714,6 +37714,13 @@ export type GetBudgetFundedEventsQueryVariables = Exact<{
 
 export type GetBudgetFundedEventsQuery = { __typename: 'Query', budgetFundedEvents: Array<{ __typename: 'BudgetFundedEvent', id: string, amount: string, inBlock: number, createdAt: any }> };
 
+export type GetBudgetFundedEventsTotalCountQueryVariables = Exact<{
+  where?: InputMaybe<BudgetFundedEventWhereInput>;
+}>;
+
+
+export type GetBudgetFundedEventsTotalCountQuery = { __typename: 'Query', budgetFundedEventsConnection: { __typename: 'BudgetFundedEventConnection', totalCount: number } };
+
 export type GetWorkersQueryVariables = Exact<{
   where?: InputMaybe<WorkerWhereInput>;
   offset?: InputMaybe<Scalars['Int']['input']>;
@@ -37721,7 +37728,7 @@ export type GetWorkersQueryVariables = Exact<{
 }>;
 
 
-export type GetWorkersQuery = { __typename: 'Query', workers: Array<{ __typename: 'Worker', id: string, runtimeId: number, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } }> };
+export type GetWorkersQuery = { __typename: 'Query', workers: Array<{ __typename: 'Worker', id: string, runtimeId: number, rewardAccount: string, roleAccount: string, stakeAccount: string, applicationId: string, isLead: boolean, rewardPerBlock: string, missingRewardAmount?: string | null, stake: string, membership: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null }, group: { __typename: 'WorkingGroup', id: string, name: string }, status: { __typename: 'WorkerStatusActive' } | { __typename: 'WorkerStatusLeaving' } | { __typename: 'WorkerStatusLeft' } | { __typename: 'WorkerStatusTerminated' } }> };
 
 export type GetPastWorkersQueryVariables = Exact<{
   where?: InputMaybe<WorkerWhereInput>;
@@ -38246,6 +38253,9 @@ export const WorkerFieldsFragmentDoc = gql`
   status {
     __typename
   }
+  rewardAccount
+  roleAccount
+  stakeAccount
   applicationId
   isLead
   rewardPerBlock
@@ -38618,6 +38628,8 @@ export const GetFundingProposalsDocument = gql`
     limit: $limit
   ) {
     amount
+    account
+    inBlock
   }
 }
     `;
@@ -38965,6 +38977,13 @@ export const GetBudgetFundedEventsDocument = gql`
     amount
     inBlock
     createdAt
+  }
+}
+    `;
+export const GetBudgetFundedEventsTotalCountDocument = gql`
+    query GetBudgetFundedEventsTotalCount($where: BudgetFundedEventWhereInput) {
+  budgetFundedEventsConnection(where: $where) {
+    totalCount
   }
 }
     `;
@@ -39386,6 +39405,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetBudgetFundedEvents(variables?: GetBudgetFundedEventsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetBudgetFundedEventsQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetBudgetFundedEventsQuery>(GetBudgetFundedEventsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetBudgetFundedEvents', 'query');
+    },
+    GetBudgetFundedEventsTotalCount(variables?: GetBudgetFundedEventsTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetBudgetFundedEventsTotalCountQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetBudgetFundedEventsTotalCountQuery>(GetBudgetFundedEventsTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetBudgetFundedEventsTotalCount', 'query');
     },
     GetWorkers(variables?: GetWorkersQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetWorkersQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetWorkersQuery>(GetWorkersDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetWorkers', 'query');
