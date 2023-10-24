@@ -9,7 +9,6 @@ import {
   getVideoNftStatus,
   getVideoStatus,
   getTotalSupply,
-  getWorkingGroupSpending,
   getForumStatus,
   getWorkingGroupStatus,
   getMembershipCount,
@@ -28,7 +27,8 @@ import {
   getFundingProposal,
   getCreatorPayoutReward,
   getCouncilRefill,
-  getWGSpendingWithReceiverID
+  getWGSpendingWithReceiverID,
+  getValidatorReward
 
 } from "@/api";
 import { MEXC_WALLET } from "@/config";
@@ -50,7 +50,6 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
     hash: blockHash,
     timestamp: blockTimestamp,
   };
-
   const {
     videosConnection: { totalCount: videoCount },
   } = await GetVideoCount({
@@ -63,7 +62,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
       createdAt_lte: blockTimestamp,
     },
   });
-  // const { endCount } = await getChannelStatus(blockNumber);
+  const { endCount } = await getChannelStatus(blockNumber);
   const {
     nftIssuedEventsConnection: { totalCount: nftCount },
   } = await GetNftIssuedCount({
@@ -72,7 +71,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   let content = {
     videoCount,
     channelCount,
-    // nonEmptyChannelCount: endCount,
+    nonEmptyChannelCount: endCount,
     nftCount,
     totalStorage: 0
   };
@@ -164,6 +163,7 @@ export async function generateReport2(
     timestamp: endBlockTimestamp,
   };
 
+
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
   const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
@@ -194,7 +194,7 @@ export async function generateReport2(
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
   let wgSpentBudget = 0;
-  const validatorRewardsBudget = toJoy(new BN(0));
+  const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
   const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
   const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
   Object.keys(wgBudget).map((wgName) => {
@@ -477,7 +477,7 @@ export async function generateReport4(
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
   let wgSpentBudget = 0;
-  const validatorRewardsBudget = toJoy(new BN(0));
+  const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
   const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
   const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
   Object.keys(wgBudget).map((wgName) => {
