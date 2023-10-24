@@ -25,14 +25,6 @@ export default function Report1() {
     })();
   }, [api]);
 
-  // const generate = useCallback(async () => {
-  //   if (!api) return;
-  //   setLoading(true);
-  //   const [report1] = await Promise.all([generateReport1(api, block, storage)]);
-  //   setReport1(report1);
-  //   setLoading(false);
-  // }, [api, block]);
-
   const generate = async () => {
     if (!api) return;
     setLoading(true);

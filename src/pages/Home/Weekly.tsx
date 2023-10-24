@@ -15,18 +15,6 @@ export default function Weekly() {
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
 
-  // const generate = useCallback(async () => {
-  //   if (!api) return;
-  //   setLoading(true);
-
-  //   const [report2] = await Promise.all([
-  //     generateReport2(api, startBlock, endBlock),
-  //   ]);
-
-  //   setReport2(report2);
-
-  //   setLoading(false);
-  // }, [api, startBlock, endBlock]);
 
   const generate = async () => {
     if (!api) return;
