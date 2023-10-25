@@ -37,10 +37,6 @@ export default function Report1() {
     setStorage(!storage);
   }
 
-  const onTest = () => {
-    console.log("test", storage)
-  }
-
   return (
     <div className="prose max-w-3xl m-auto mt-4 rounded-sm p-2 border-2 border-[#fff]">
       <h3>Given Block Stats</h3>
@@ -49,7 +45,7 @@ export default function Report1() {
           Current block number: {currentBlock ? currentBlock : "Loading..."}
         </div>
         <div >
-          <label onClick={onTest} >Block:</label>
+          <label  >Block:</label>
           <input
             type="number"
             value={block}
