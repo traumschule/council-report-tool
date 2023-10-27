@@ -183,11 +183,7 @@ export async function generateReport2(
   const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const inflationChange = endInflation - startInflation;
 
-  const supply = {
-    inflationChange,
-    TokensMinted: issuanceChange,
-    // TokensBurned: burn,
-  };
+
 
   // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
@@ -205,15 +201,21 @@ export async function generateReport2(
   });
   const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
   const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
+  const grandTotal = councilRewardBudget + wgSpentBudget + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget;
   const daoSpending = {
     councilReward: councilRewardBudget,
     wgSpent: wgSpentBudget,
     fundingProposals: fundingProposalBudget,
     creatorPayoutRewards: creatorPayoutRewardBudget,
     validatorRewards: validatorRewardsBudget,
-    grandTotal: (councilRewardBudget + wgSpentBudget + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget)
+    grandTotal
   };
-
+  const supply = {
+    inflationChange,
+    changedtoken: issuanceChange,
+    tokensMinted: grandTotal,
+    tokensBurned: grandTotal - issuanceChange,
+  };
   // 6. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#council-budget
 
   const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
