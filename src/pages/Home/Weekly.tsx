@@ -50,7 +50,7 @@ export default function Weekly() {
       const startBlock = Math.ceil(moment(startDate).diff(baseTimeStamp, 'seconds') / 6);
       if (diff <= 0) {
         const endBlock = Math.ceil(moment(endDate).diff(baseTimeStamp, 'seconds') / 6);
-        setStartBlock(startBlock + baseBlockNumber);
+        setStartBlock(startBlock + baseBlockNumber + 1);
         setEndBlock(endBlock + baseBlockNumber);
       } else {
         if (!api) return;
