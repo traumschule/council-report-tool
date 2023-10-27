@@ -29,6 +29,8 @@ export default function Weekly() {
 
   const generate = async () => {
     if (!api) return;
+    if (startBlock * endBlock == 0)
+      return;
     setLoading(true);
     const [report2] = await Promise.all([
       generateReport2(api, storageFlag, startBlock, endBlock),
@@ -39,6 +41,13 @@ export default function Weekly() {
 
   const storageFlagHandler = () => {
     setStorageFlag(!storageFlag);
+  }
+
+  const getCurrentBlockNumber = async () => {
+    if (!api) return;
+    const blockHeader = await api.rpc.chain.getHeader();
+    const currentBlockNumber = blockHeader.number.toNumber();
+    setEndBlock(currentBlockNumber);
   }
 
   const onWeekSelectHandler = async (e: any) => {
@@ -53,11 +62,8 @@ export default function Weekly() {
         setStartBlock(startBlock + baseBlockNumber + 1);
         setEndBlock(endBlock + baseBlockNumber);
       } else {
-        if (!api) return;
-        const blockHeader = await api.rpc.chain.getHeader();
-        const currentBlockNumber = blockHeader.number.toNumber();
         setStartBlock(startBlock + baseBlockNumber);
-        setEndBlock(currentBlockNumber);
+        getCurrentBlockNumber()
       }
     }
   }
@@ -74,11 +80,21 @@ export default function Weekly() {
       <div className="justify-content-center">
         <div>Weeks </div>
         <select onChange={onWeekSelectHandler} style={{ width: '100%', borderColor: 'grey', borderWidth: '2px', borderStyle: 'solid', borderRadius: '6px', padding: '8px' }}>
-          <option value={0}></option>
+          <option value={0}>Select ...</option>
           {
             [...Array(totalWeek).keys()].map(
               i => moment().day(6).week(totalWeek - i).diff(baseStartDate, 'days') > 0 && moment().day(6).week(totalWeek - i).diff(new Date(), 'days') < 0 ?
-                (<option value={totalWeek - i} key={totalWeek - i}>{moment().day(6).week(totalWeek - i).format('DD MMMM YYYY')} ~ {moment().day(6).week(totalWeek - i).add('day', 7).format('DD MMMM YYYY')}</option>) :
+                (<option value={totalWeek - i} key={totalWeek - i}>
+                  {moment().day(6).week(totalWeek - i).format('DD MMMM YYYY')}
+                  ~
+                  {
+                    moment().day(6).week(totalWeek - i).add('day', 7).diff((new Date()), 'days') < 0 ? (
+                      moment().day(6).week(totalWeek - i).add('day', 7).format('DD MMMM YYYY')
+                    ) : (
+                      <> Progress </>
+                    )
+                  }
+                </option>) :
                 null)
           }
         </select>

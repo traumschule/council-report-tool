@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Select, {
   components,
   OptionProps,
@@ -44,7 +44,9 @@ export default function CouncilSelect({
   onChange,
 }: CouncilSelectProps) {
   const { data } = useElectedCouncils({});
-
+  useEffect(() => {
+    console.log("ele", data);
+  }, [data])
   return (
     <div className="justify-content-center">
       <div>Choose council </div>
