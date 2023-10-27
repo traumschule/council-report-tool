@@ -24,11 +24,14 @@ export default function Weekly() {
   const [storageFlag, setStorageFlag] = useState(false);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
-  const [week, setWeek] = useState(null);
+  const [currentBlock, setCurrentBlock] = useState(0);
   const [totalWeek, setTotalWeek] = useState(0);
 
   const generate = async () => {
     if (!api) return;
+    const blockHeader = await api.rpc.chain.getHeader();
+    const currentBlockNumber = blockHeader.number.toNumber();
+    setCurrentBlock(currentBlockNumber);
     if (startBlock * endBlock == 0)
       return;
     setLoading(true);
@@ -60,10 +63,13 @@ export default function Weekly() {
       if (diff <= 0) {
         const endBlock = Math.ceil(moment(endDate).diff(baseTimeStamp, 'seconds') / 6);
         setStartBlock(startBlock + baseBlockNumber + 1);
-        setEndBlock(endBlock + baseBlockNumber);
+        if ((endBlock + baseBlockNumber) > currentBlock)
+          setEndBlock(currentBlock);
+        else
+          setEndBlock(endBlock + baseBlockNumber);
       } else {
         setStartBlock(startBlock + baseBlockNumber);
-        getCurrentBlockNumber()
+        getCurrentBlockNumber();
       }
     }
   }
