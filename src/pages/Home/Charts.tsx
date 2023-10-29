@@ -105,11 +105,11 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
       >
         {loading ? "Generating..." : "Generate Chart"}
       </button>
-      <JoyChart data={videoData} title="Videos" />
+      <JoyChart data={videoData} title="New Videos" />
       <JoyChart data={videoNftData} title="Video NFTs" />
       <JoyChart data={channelData} title="Non-empty channels" />
       <JoyChart data={membershipData} title="Membership" />
-      {storageStatus ? (<JoyChart data={storageData} title="Storage(MBytes)" />
+      {storageStatus ? (<JoyChart data={storageData} title="Storage(GBytes)" />
       ) : null
       }
     </div>

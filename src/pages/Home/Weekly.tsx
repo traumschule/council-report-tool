@@ -24,14 +24,15 @@ export default function Weekly() {
   const [storageFlag, setStorageFlag] = useState(false);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
-  const [currentBlock, setCurrentBlock] = useState(0);
   const [totalWeek, setTotalWeek] = useState(0);
+  const [activeWeek, setActiveWeek] = useState(-1);
+  const style = {
+    fontWeight: 800,
+  }
 
   const generate = async () => {
     if (!api) return;
-    const blockHeader = await api.rpc.chain.getHeader();
-    const currentBlockNumber = blockHeader.number.toNumber();
-    setCurrentBlock(currentBlockNumber);
+
     if (startBlock * endBlock == 0)
       return;
     setLoading(true);
@@ -54,8 +55,12 @@ export default function Weekly() {
   }
 
   const onWeekSelectHandler = async (e: any) => {
+    if (!api) return;
     const index = e.target.value;
+    const blockHeader = await api.rpc.chain.getHeader();
+    const currentBlockNumber = blockHeader.number.toNumber();
     if (index > 0) {
+      setActiveWeek(index);
       const startDate = moment().day(6).week(index).format('YYYY-MM-DD');
       const endDate = moment().day(6).week(index).add('day', 7).format('YYYY-MM-DD');
       const diff = moment(endDate).diff(new Date(), 'days');
@@ -63,13 +68,14 @@ export default function Weekly() {
       if (diff <= 0) {
         const endBlock = Math.ceil(moment(endDate).diff(baseTimeStamp, 'seconds') / 6);
         setStartBlock(startBlock + baseBlockNumber + 1);
-        if ((endBlock + baseBlockNumber) > currentBlock)
-          setEndBlock(currentBlock);
+        if ((endBlock + baseBlockNumber) > currentBlockNumber)
+          setEndBlock(currentBlockNumber);
+
         else
           setEndBlock(endBlock + baseBlockNumber);
       } else {
         setStartBlock(startBlock + baseBlockNumber);
-        getCurrentBlockNumber();
+        setEndBlock(currentBlockNumber);
       }
     }
   }
@@ -90,7 +96,7 @@ export default function Weekly() {
           {
             [...Array(totalWeek).keys()].map(
               i => moment().day(6).week(totalWeek - i).diff(baseStartDate, 'days') > 0 && moment().day(6).week(totalWeek - i).diff(new Date(), 'days') < 0 ?
-                (<option value={totalWeek - i} key={totalWeek - i}>
+                (<option value={totalWeek - i} key={totalWeek - i} style={(totalWeek - i) == activeWeek ? style : {}} >
                   {moment().day(6).week(totalWeek - i).format('DD MMMM YYYY')}
                   ~
                   {

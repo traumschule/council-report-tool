@@ -12,10 +12,12 @@ export default function Council() {
   const [report4, setReport4] = useState({});
   const [loading, setLoading] = useState(false);
   const [storageFlag, setStorageFlag] = useState(false);
-
+  const [activeCouncil, setActiveCouncil] = useState(-1);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
-
+  const style = {
+    fontWeight: 800,
+  }
 
   const getCurrentBlockNumber = async () => {
     if (!api) return;
@@ -44,6 +46,7 @@ export default function Council() {
     if (!data) return;
     const index = e.target.value;
     if (index > 0) {
+      setActiveCouncil(index);
       const electedAt = data[index - 1].electedAt;
       const endAt = data[index - 1].endedAt;
       setStartBlock(electedAt.number);
@@ -64,19 +67,15 @@ export default function Council() {
               <select onChange={onCouncilChangeHandler} style={{ width: '100%', borderColor: 'grey', borderWidth: '2px', borderStyle: 'solid', borderRadius: '6px', padding: '8px' }}>
                 <option value={0}>Select ...</option>
                 {data.map((e, key) =>
-                  <option value={key + 1} key={key}>
+                  <option value={key + 1} key={key} style={(key + 1) == activeCouncil ? style : {}}>
                     {
                       moment(e.electedAt.timestamp).format('DD MMMM YYYY')
                     }
                     ~
                     {
                       e.endedAt ? (
-                        <span>
-                          {
-                            moment(e.endedAt.timestamp).format('DD MMMM YYYY')
-                          }
-                        </span>
-                      ) : <span>( Progress ) </span>
+                        moment(e.endedAt.timestamp).format('DD MMMM YYYY')
+                      ) : <>( Progress ) </>
                     }
                   </option>
                 )}

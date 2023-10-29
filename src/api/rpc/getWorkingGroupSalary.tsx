@@ -56,6 +56,5 @@ export async function getWorkingGroupSalary(api: ApiPromise, block?: HexString) 
         salary[_group as GroupIdName] = workerList;
     });
     await Promise.all(promises);
-    console.log("reward per block", salary);
     return salary;
 }
