@@ -511,7 +511,7 @@ export async function generateReport4(
     startIssuance,
     endIssuance,
     termIssuance: issuanceChange,
-    Inflation: (endIssuance / startIssuance - 1) * 100
+    Inflation: issuanceChange / Math.pow(10, 9)
   }
 
   // available working group budget
