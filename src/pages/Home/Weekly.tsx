@@ -1,31 +1,24 @@
 import { useState, useEffect } from "react";
 import ReactJson from "react-json-view";
-import Select, {
-  components,
-  OptionProps,
-  SingleValueProps,
-} from "react-select";
 import moment from "moment";
 
 import { useRpc } from "@/hooks";
 import { generateReport2 } from "@/helpers";
 
 import Charts from "./Charts";
-import { start } from "repl";
 
 export default function Weekly() {
   const { api } = useRpc();
-  const baseStartDate = "2023-03-06"
-  const weeksPerYear = 52;
-  const baseBlockNumber = 1242742;
-  const baseTimeStamp = 1678084488000;
+  const baseStartDate = "2023-08-11"
+  const baseStartBlockNumber: number = 3531601;
+  const blocksPerWeek: number = 100800;
   const [report2, setReport2] = useState({});
   const [loading, setLoading] = useState(false);
   const [storageFlag, setStorageFlag] = useState(false);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
-  const [totalWeek, setTotalWeek] = useState(0);
   const [activeWeek, setActiveWeek] = useState(-1);
+  const [diffweeks, setDiffWeeks] = useState(0);
   const style = {
     fontWeight: 800,
   }
@@ -47,43 +40,31 @@ export default function Weekly() {
     setStorageFlag(!storageFlag);
   }
 
-  const getCurrentBlockNumber = async () => {
-    if (!api) return;
-    const blockHeader = await api.rpc.chain.getHeader();
-    const currentBlockNumber = blockHeader.number.toNumber();
-    setEndBlock(currentBlockNumber);
-  }
 
   const onWeekSelectHandler = async (e: any) => {
     if (!api) return;
-    const index = e.target.value;
-    const blockHeader = await api.rpc.chain.getHeader();
-    const currentBlockNumber = blockHeader.number.toNumber();
+    const index: number = e.target.value;
     if (index > 0) {
       setActiveWeek(index);
-      const startDate = moment().day(6).week(index).format('YYYY-MM-DD');
-      const endDate = moment().day(6).week(index).add('day', 7).format('YYYY-MM-DD');
+      const endDate = moment(baseStartDate).add(((+index + 1) * 7 + 1), 'day');
       const diff = moment(endDate).diff(new Date(), 'days');
-      const startBlock = Math.ceil(moment(startDate).diff(baseTimeStamp, 'seconds') / 6);
+      const startBlock = +baseStartBlockNumber + index * blocksPerWeek + +index;
       if (diff <= 0) {
-        const endBlock = Math.ceil(moment(endDate).diff(baseTimeStamp, 'seconds') / 6);
-        setStartBlock(startBlock + baseBlockNumber + 1);
-        if ((endBlock + baseBlockNumber) > currentBlockNumber)
-          setEndBlock(currentBlockNumber);
-
-        else
-          setEndBlock(endBlock + baseBlockNumber);
+        const endBlock = +baseStartBlockNumber + (+index + 1) * blocksPerWeek + +index;
+        setStartBlock(startBlock);
+        setEndBlock(endBlock);
       } else {
-        setStartBlock(startBlock + baseBlockNumber);
+        const blockHeader = await api.rpc.chain.getHeader();
+        const currentBlockNumber = blockHeader.number.toNumber();
+        setStartBlock(startBlock);
         setEndBlock(currentBlockNumber);
       }
     }
   }
 
   useEffect(() => {
-    let weeks = 0;
-    weeks += moment().week();
-    setTotalWeek(weeks);
+    const diff = moment().diff(baseStartDate, 'weeks');
+    setDiffWeeks(diff);
   }, [])
 
   return (
@@ -94,20 +75,21 @@ export default function Weekly() {
         <select onChange={onWeekSelectHandler} style={{ width: '100%', borderColor: 'grey', borderWidth: '2px', borderStyle: 'solid', borderRadius: '6px', padding: '8px' }}>
           <option value={0}>Select ...</option>
           {
-            [...Array(totalWeek).keys()].map(
-              i => moment().day(6).week(totalWeek - i).diff(baseStartDate, 'days') > 0 && moment().day(6).week(totalWeek - i).diff(new Date(), 'days') < 0 ?
-                (<option value={totalWeek - i} key={totalWeek - i} style={(totalWeek - i) == activeWeek ? style : {}} >
-                  {moment().day(6).week(totalWeek - i).format('DD MMMM YYYY')}
+            [...Array(diffweeks).keys()].map(
+              i => moment(baseStartDate).add((diffweeks - i) * 7 + 1, 'day').diff(new Date(), 'days') < 0 ? (
+                <option value={diffweeks - i} key={diffweeks - i} style={(diffweeks - i) == activeWeek ? style : {}} >
+                  {moment(baseStartDate).add((diffweeks - i) * 7 + 1, 'day').format('DD MMMM YYYY')}
                   ~
                   {
-                    moment().day(6).week(totalWeek - i).add('day', 7).diff((new Date()), 'days') < 0 ? (
-                      moment().day(6).week(totalWeek - i).add('day', 7).format('DD MMMM YYYY')
+                    moment(baseStartDate).add((diffweeks - i + 1) * 7 + 1, 'day').diff(new Date(), 'days') < 0 ? (
+                      moment(baseStartDate).add((diffweeks - i + 1) * 7 + 1, 'day').format('DD MMMM YYYY')
                     ) : (
                       <> Progress </>
                     )
                   }
-                </option>) :
-                null)
+                </option>
+              ) : null
+            )
           }
         </select>
       </div>

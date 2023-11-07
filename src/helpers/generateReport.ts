@@ -162,7 +162,8 @@ export async function generateReport2(
     hash: endBlockHash,
     timestamp: endBlockTimestamp,
   };
-
+  console.log("startblock", startBlock);
+  console.log("endblock", endBlock);
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
   const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
