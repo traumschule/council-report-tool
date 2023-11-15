@@ -24,7 +24,7 @@ export const client = new GraphQLClient(QN_URL);
 
 export const getStorageChartData = async (start: Date, end: Date) => {
   const { GetStorageDataObjectsCount, GetStorageDataObjects } = getSdk(client);
-  const defaultLimit = 10000;
+  const defaultLimit = 5000;
   let curDate = moment(start).format('YYYY-MM-DD');
   let data: Array<DailyData> = [];
   let storageSize = 0;
@@ -66,7 +66,7 @@ export const getStorageChartData = async (start: Date, end: Date) => {
 
 export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
   const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
-  const defalultOffset = 10000;
+  const defalultOffset = 5000;
   const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
     where: {
       createdAt_lte: end
@@ -105,7 +105,7 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
 
 export const getChannelStatus = async (endBlockNumber: number, startDate?: Date) => {
   const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 10000;
+  const defaultLimit = 5000;
   let startCount: string[] = [];
   let endCount: string[] = [];
   const { videosConnection: { totalCount: videoCount } } = await GetVideoCount({
