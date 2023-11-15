@@ -66,7 +66,7 @@ export const getStorageChartData = async (start: Date, end: Date) => {
 
 export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
   const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
-  const defalultOffset = 1000;
+  const defalultOffset = 10000;
   const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
     where: {
       createdAt_lte: end
