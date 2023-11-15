@@ -24,7 +24,7 @@ export const client = new GraphQLClient(QN_URL);
 
 export const getStorageChartData = async (start: Date, end: Date) => {
   const { GetStorageDataObjectsCount, GetStorageDataObjects } = getSdk(client);
-  const defaultLimit = 1000;
+  const defaultLimit = 10000;
   let curDate = moment(start).format('YYYY-MM-DD');
   let data: Array<DailyData> = [];
   let storageSize = 0;
