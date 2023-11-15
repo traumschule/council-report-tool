@@ -5,6 +5,5 @@ export * from "./getBlockHash";
 export * from "./getBalance";
 export * from "./getWorkingGroupBudget";
 export * from "./getWorkingGroups";
-export * from "./getEvent";
 export * from "./getWorkingGroupSalary";
 export * from "./getValidatorReward";

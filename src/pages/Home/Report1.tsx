@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import ReactJson from "react-json-view";
 import { useRpc } from "@/hooks";
 import { generateReport1 } from "@/helpers";
-import { getEvent } from "@/api/rpc/getEvent";
 
 export default function Report1() {
   const { api } = useRpc();
