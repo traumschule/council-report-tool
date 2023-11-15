@@ -105,7 +105,7 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
 
 export const getChannelStatus = async (endBlockNumber: number, startDate?: Date) => {
   const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 1000;
+  const defaultLimit = 10000;
   let startCount: string[] = [];
   let endCount: string[] = [];
   const { videosConnection: { totalCount: videoCount } } = await GetVideoCount({
