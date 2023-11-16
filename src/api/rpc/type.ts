@@ -7,7 +7,7 @@ export class CacheEvent {
     }
 }
 
-export type wgSalaryType{
+export type wgSalaryType = {
     leadSalary: number,
     workerSalary: number,
     daoSpendingBudget: number
