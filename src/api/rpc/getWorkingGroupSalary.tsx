@@ -1,21 +1,24 @@
 import { ApiPromise } from "@polkadot/api";
 import { HexString } from "@polkadot/util/types";
-
-
-import BN from "bn.js";
-import { Worker } from "./type";
+import { wgSalaryType } from "./type";
 import { GroupIdToGroupParam, GroupIdName } from "@/types";
-import { toJoy } from "@/helpers";
+import { getWorkerByMemberId, getWGSpendingWithReceiverID } from "..";
+import { string2Joy } from "@/helpers";
 
-export async function getWorkingGroupSalary(api: ApiPromise, block?: HexString) {
+export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, startDate: Date, endDate: Date, startBlockNumber: number, endBlockNumber: number) {
+
     const _api = block ? await api.at(block) : api;
     let salary = {} as {
-        [key in GroupIdName]: Array<Worker>
+        [key in GroupIdName]: wgSalaryType
     };
     const promises = Object.keys(GroupIdToGroupParam).map(async (_group) => {
         const group = _group as GroupIdName;
-        let workerList: Array<Worker> = [];
         let workerNumber = 0;
+        let wgSalary = {
+            leadSalary: 0,
+            workerSalary: 0,
+            daoSpendingBudget: 0
+        };
         const currentLead = await _api.query[group].currentLead();
         const _activeWorkers = await _api.query[group].activeWorkerCount();
         const _nextWorkerId = await _api.query[group].nextWorkerId();
@@ -28,32 +31,39 @@ export async function getWorkingGroupSalary(api: ApiPromise, block?: HexString) 
             if (!_workerInfo.isNone) {
                 const workerInfo = _workerInfo.unwrap();
                 if (workerInfo.startedLeavingAt.isNone) {
-                    let worker = {
-                        memeberId: Number(workerInfo.memberId),
-                        handle: "",
-                        reward: Number(workerInfo.rewardPerBlock),
-                        isLead: false,
-                        rewardAccount: String(workerInfo.rewardAccountId)
-                    };
-                    Object.keys(GroupIdToGroupParam)
-                        .map((groupId) => {
-                            if (salary[groupId as GroupIdName]) {
-                                for (let j = 0; j < salary[groupId as GroupIdName].length; j++) {
-                                    if (salary[groupId as GroupIdName][j].memeberId == Number(workerInfo.memberId)) {
-                                        salary[groupId as GroupIdName][j].reward += Number(workerInfo.rewardPerBlock);
-                                        worker.reward = salary[groupId as GroupIdName][j].reward
-                                    }
-                                }
-                            }
-                        })
-                    if (i == Number(currentLead))
-                        worker.isLead = true;
-                    workerList.push(worker);
+                    const memberId = workerInfo.memberId.toString();
+                    const accounts: Array<string> = [];
+                    const workerData = await getWorkerByMemberId(memberId);
+                    accounts.push(workerData[0].roleAccount);
+                    accounts.push(workerData[0].rewardPerBlock);
+                    accounts.push(workerData[0].membership.controllerAccount);
+                    accounts.push(workerData[0].membership.rootAccount);
+                    const daoSpendingBudget = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, accounts);
+                    let payout = 0;
+                    workerData
+                        .map((a) => {
+                            a.payouts
+                                .filter((a) => {
+                                    return new Date(a.createdAt) >= startDate && new Date(a.createdAt) <= endDate;
+                                })
+                                .map((a) => {
+                                    payout += string2Joy(a.amount);
+                                })
+                        });
+                    wgSalary.daoSpendingBudget += Math.ceil(daoSpendingBudget);
+                    if (i == Number(currentLead)) {
+                        wgSalary.leadSalary += Math.ceil(daoSpendingBudget);
+                        wgSalary.leadSalary += Math.ceil(payout);
+                    } else {
+                        wgSalary.workerSalary += Math.ceil(daoSpendingBudget);
+                        wgSalary.workerSalary += Math.ceil(payout);
+                    }
+
                 }
                 workerNumber++;
             }
         }
-        salary[_group as GroupIdName] = workerList;
+        salary[_group as GroupIdName] = wgSalary;
     });
     await Promise.all(promises);
     return salary;

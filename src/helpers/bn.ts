@@ -19,3 +19,7 @@ export const powerOf2 = (value: any) => BN_TWO.pow(asBN(value));
 export const toJoy = (value: BN): number => {
   return value.div(powerOf10(10)).toNumber();
 };
+
+export const string2Joy = (value: string): number => {
+  return Number(value) / Math.pow(10, 10);
+}

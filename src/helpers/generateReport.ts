@@ -162,6 +162,7 @@ export async function generateReport2(
     hash: endBlockHash,
     timestamp: endBlockTimestamp,
   };
+
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
   const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
@@ -245,7 +246,7 @@ export async function generateReport2(
   };
   const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
   const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
-  const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
+  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   const promises = Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
       let wgData = {
@@ -253,32 +254,12 @@ export async function generateReport2(
         endBudget: wgBudget[_group as GroupIdName].endBudget,
         totalRefilled: 0,
         totalSpending: 0,
-        leadSalary: 0,
-        workerSalary: 0,
+        leadSalary: wgSalary[_group as GroupIdName].leadSalary,
+        workerSalary: wgSalary[_group as GroupIdName].workerSalary,
         spendingProposal: 0
       }
-      const leadMember = wgSalary[_group as GroupIdName]
-        .find((a) => {
-          return a.isLead == true;
-        });
-
-      if (leadMember) {
-        const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
-        wgData.leadSalary += toJoy(new BN(leadMember.reward * (endBlockNumber - startBlockNumber))) + leadSpending;
-        const leadCouncilReward = councilReward
-          .filter((c) => {
-            return Number(c.memberId) == leadMember.memeberId
-          })
-          .reduce((a, b) => a + b.amount, 0);
-        wgData.leadSalary += leadCouncilReward;
-      }
-      wgData.workerSalary = wgSalary[_group as GroupIdName]
-        .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0);
-      wgData.workerSalary = toJoy(new BN(wgData.workerSalary));
-      wgData.totalSpending = wgData.workerSalary;
+      wgData.totalSpending = wgData.leadSalary + wgData.workerSalary;
       if (wgSpending[_group as GroupIdName]) {
-
-        wgData.workerSalary += wgSpending[_group as GroupIdName];
         wgData.totalSpending += wgSpending[_group as GroupIdName];
       }
       if (wgSpendingProposal[_group as GroupIdName]) {
@@ -415,7 +396,6 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
-
   // working group status
 
   const workingGroup = await getWorkingGroupStatus(
@@ -525,39 +505,16 @@ export async function generateReport4(
     }
   }
   const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
-  const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
-  const wgSalary = await getWorkingGroupSalary(api, endBlockHash);
+  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
       let wgData = {
         startWGBudget: wgBudget[_group as GroupIdName].startBudget,
         endWGBudget: wgBudget[_group as GroupIdName].endBudget,
-        discretionarySpending: 0,
+        discretionarySpending: wgSalary[_group as GroupIdName].daoSpendingBudget,
         spendingProposal: 0,
-        workerRewards: 0,
-        leadRewards: 0,
-      }
-      const leadMember = wgSalary[_group as GroupIdName]
-        .find((a) => {
-          return a.isLead == true;
-        });
-
-      if (leadMember) {
-        const leadSpending = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, leadMember.rewardAccount);
-        wgData.leadRewards += toJoy(new BN(leadMember.reward * (endBlockNumber - startBlockNumber))) + leadSpending;
-        const leadCouncilReward = councilReward
-          .filter((c) => {
-            return Number(c.memberId) == leadMember.memeberId
-          })
-          .reduce((a, b) => a + b.amount, 0);
-        wgData.leadRewards += leadCouncilReward;
-      }
-      wgData.workerRewards = toJoy(new BN(
-        wgSalary[_group as GroupIdName]
-          .reduce((a, b) => a + b.reward * (endBlockNumber - startBlockNumber), 0)
-      ));
-      if (wgSpending[_group as GroupIdName]) {
-        wgData.workerRewards += wgSpending[_group as GroupIdName];
+        workerRewards: wgSalary[_group as GroupIdName].workerSalary,
+        leadRewards: wgSalary[_group as GroupIdName].leadSalary,
       }
       if (wgSpendingProposal[_group as GroupIdName]) {
         wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];

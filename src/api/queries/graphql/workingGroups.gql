@@ -18,6 +18,10 @@ fragment WorkerFields on Worker {
   status {
     __typename
   }
+  payouts{
+    amount
+    createdAt
+  }
   rewardAccount
   roleAccount
   stakeAccount

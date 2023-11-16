@@ -7,12 +7,10 @@ export class CacheEvent {
     }
 }
 
-export type Worker = {
-    memeberId: number,
-    handle: string,
-    reward: number,
-    isLead: boolean,
-    rewardAccount: string
+export type wgSalaryType{
+    leadSalary: number,
+    workerSalary: number,
+    daoSpendingBudget: number
 }
 
 export type WorkingGroup = {

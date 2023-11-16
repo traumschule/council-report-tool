@@ -13,9 +13,9 @@ import {
 } from "@/types";
 
 import { getSdk } from "./__generated__/gql";
-import { toJoy, decimalAdjust } from "@/helpers";
+import { toJoy, decimalAdjust, string2Joy } from "@/helpers";
 import { GroupIdToGroupParam, GroupIdName } from "@/types";
-import { DailyData, ChannelData, BudgetData, CouncilBudgetData } from "@/hooks/types";
+import { DailyData, ChannelData } from "@/hooks/types";
 export { getSdk } from "./__generated__/gql";
 
 export const client = new GraphQLClient(QN_URL);
@@ -469,7 +469,6 @@ export const getMembershipCount = async (date: Date) => {
   return totalCount;
 };
 
-
 export const getMembershipStatus = async (start: Date, end: Date) => {
   const { GetMembersCount } = getSdk(client);
   const {
@@ -576,7 +575,17 @@ export const getExitedWorkers = async () => {
   return workerExitedEvents;
 }
 
-
+export const getWorkerByMemberId = async (memberId: string) => {
+  const { GetWorkers } = getSdk(client);
+  const { workers } = await GetWorkers({
+    where: {
+      membership: {
+        id_eq: memberId
+      }
+    }
+  });
+  return workers;
+}
 
 // council Reward
 
@@ -869,26 +878,25 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
 
 // wg spending with receiver ID
 
-export const getWGSpendingWithReceiverID = async (start: number, end: number, accountID: string) => {
+export const getWGSpendingWithReceiverID = async (start: number, end: number, accountID: Array<string>) => {
   const { GetBudgetSpending, GetBudgetSpendingEventsTotalCount } = getSdk(client);
   const { budgetSpendingEventsConnection: { totalCount } } = await GetBudgetSpendingEventsTotalCount({
     where: {
       inBlock_gte: start,
       inBlock_lte: end,
-      reciever_eq: accountID
+      reciever_in: accountID
     }
   });
   const { budgetSpendingEvents } = await GetBudgetSpending({
     where: {
       inBlock_gte: start,
       inBlock_lte: end,
-      reciever_eq: accountID
+      reciever_in: accountID
     },
     limit: totalCount
   });
   const spendingBudget = budgetSpendingEvents
-    .map((s) => new BN(s.amount))
-    .reduce((a, b) => a + toJoy(b), 0);
+    .reduce((a, b) => a + string2Joy(b.amount), 0);
   return spendingBudget
 }
 
