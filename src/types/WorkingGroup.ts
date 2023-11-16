@@ -10,16 +10,18 @@ import { asWorkerWithDetails, WorkerWithDetails } from "./Worker";
 export const GroupIdToGroupParam = {
   contentWorkingGroup: "Content",
   forumWorkingGroup: "Forum",
-  appWorkingGroup: "App",
+  appWorkingGroup: "Apps",
   membershipWorkingGroup: "Membership",
   distributionWorkingGroup: "Distribution",
   storageWorkingGroup: "Storage",
-  operationsWorkingGroupAlpha: "OperationsAlpha",
-  operationsWorkingGroupBeta: "OperationsBeta",
-  operationsWorkingGroupGamma: "OperationsGamma",
+  operationsWorkingGroupAlpha: "Builders",
+  operationsWorkingGroupBeta: "HR",
+  operationsWorkingGroupGamma: "Marketing",
 } as const;
 
 export type GroupIdName = keyof typeof GroupIdToGroupParam;
+
+export type GroupShortIDName = typeof GroupIdToGroupParam[GroupIdName];
 
 export interface WorkingGroup {
   id: GroupIdName;

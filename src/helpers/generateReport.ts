@@ -27,14 +27,12 @@ import {
   getFundingProposal,
   getCreatorPayoutReward,
   getCouncilRefill,
-  getWGSpendingWithReceiverID,
   getValidatorReward
 
 } from "@/api";
 import { MEXC_WALLET } from "@/config";
 import { toJoy } from "./bn";
-import { BN } from "bn.js";
-import { GroupIdName, ProposalStatus, GroupIdToGroupParam } from "@/types";
+import { GroupIdName, ProposalStatus, GroupIdToGroupParam, GroupShortIDName } from "@/types";
 import { decimalAdjust } from "./utils";
 const INITIAL_SUPPLY = 1_000_000_000;
 
@@ -95,21 +93,6 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
 
   const totalMembership = await getMembershipCount(blockTimestamp);
   const workingGroups = await getWorkingGroups(api, blockHash);
-
-  const { memberships } = await GetMembers({
-    where: {
-      id_in: workingGroups.map((w) => w.leadMemebership?.toString() || ""),
-    },
-  });
-  workingGroups.forEach((wg, idx) => {
-    workingGroups[idx] = {
-      ...workingGroups[idx],
-      // @ts-ignore
-      leadMemebership: memberships.find(
-        (m) => m.id === workingGroups[idx].leadMemebership?.toString()
-      )?.handle,
-    };
-  });
 
   return {
     general,
@@ -234,7 +217,7 @@ export async function generateReport2(
   // 7. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#wg-budgets
 
   const wgBudgets = {} as {
-    [key in GroupIdName]: {
+    [key in GroupShortIDName]: {
       startBudget: number;
       totalRefilled: number;
       totalSpending: number;
@@ -269,8 +252,9 @@ export async function generateReport2(
       if (wgRefillProposal[_group as GroupIdName]) {
         wgData.totalRefilled = wgRefillProposal[_group as GroupIdName];
       }
-      wgBudgets[_group as GroupIdName] = wgData;
+      wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
     });
+
   await Promise.all(promises);
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
   const videoStatus = await getVideoStatus(
@@ -495,7 +479,7 @@ export async function generateReport4(
 
   // available working group budget
   let wgBudgets = {} as {
-    [key in GroupIdName]: {
+    [key in GroupShortIDName]: {
       startWGBudget: number
       endWGBudget: number;
       discretionarySpending: number;
@@ -519,7 +503,7 @@ export async function generateReport4(
       if (wgSpendingProposal[_group as GroupIdName]) {
         wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];
       }
-      wgBudgets[_group as GroupIdName] = wgData;
+      wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
     });
 
   return {

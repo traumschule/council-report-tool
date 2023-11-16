@@ -535,6 +535,17 @@ export const getMembershipChartData = async (start: Date, end: Date) => {
   return chartData;
 };
 
+export const getMemeberShipHandle = async (id: string) => {
+  const { GetMembers } = getSdk(client);
+  const { memberships } = await GetMembers({
+    where: {
+      id_eq: id
+    }
+  });
+
+  return memberships[0].handle;
+}
+
 // proposal
 
 export const getProposals = async (
