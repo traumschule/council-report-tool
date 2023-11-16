@@ -490,6 +490,7 @@ export async function generateReport4(
       leadRewards: number;
     }
   }
+  const daoSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
   const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
   const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   Object.keys(GroupIdToGroupParam)
@@ -497,7 +498,7 @@ export async function generateReport4(
       let wgData = {
         startWGBudget: wgBudget[_group as GroupIdName].startBudget,
         endWGBudget: wgBudget[_group as GroupIdName].endBudget,
-        discretionarySpending: wgSalary[_group as GroupIdName].daoSpendingBudget,
+        discretionarySpending: daoSpending[_group as GroupIdName],
         spendingProposal: 0,
         refillBudget: 0,
         workerRewards: wgSalary[_group as GroupIdName].workerSalary,
