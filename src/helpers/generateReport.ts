@@ -94,6 +94,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
   const totalMembership = await getMembershipCount(blockTimestamp);
   const workingGroups = await getWorkingGroups(api, blockHash);
 
+
   return {
     general,
     content,
@@ -482,6 +483,7 @@ export async function generateReport4(
     [key in GroupShortIDName]: {
       startWGBudget: number
       endWGBudget: number;
+      refillBudget: number;
       discretionarySpending: number;
       spendingProposal: number
       workerRewards: number;
@@ -497,11 +499,15 @@ export async function generateReport4(
         endWGBudget: wgBudget[_group as GroupIdName].endBudget,
         discretionarySpending: wgSalary[_group as GroupIdName].daoSpendingBudget,
         spendingProposal: 0,
+        refillBudget: 0,
         workerRewards: wgSalary[_group as GroupIdName].workerSalary,
         leadRewards: wgSalary[_group as GroupIdName].leadSalary,
       }
       if (wgSpendingProposal[_group as GroupIdName]) {
         wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];
+      }
+      if (wgRefillProposal[_group as GroupIdName]) {
+        wgData.refillBudget = wgRefillProposal[_group as GroupIdName];
       }
       wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
     });
