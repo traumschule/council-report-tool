@@ -14,5 +14,6 @@ export async function getCouncilBudget(
     ? toJoy(await (await api.at(endBlock)).query.council.budget())
     : undefined;
 
+
   return { startCouncilBudget: startBudget, endCouncilBudget: endBudget };
 }
