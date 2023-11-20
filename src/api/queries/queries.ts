@@ -10,9 +10,6 @@ import {
   ElectedCouncil,
   Proposal,
   WorkingGroup,
-  VideoType,
-  VideoNFTType,
-  MemberShipType,
 } from "@/types";
 
 import { getSdk } from "./__generated__/gql";
