@@ -23,3 +23,4 @@ export const toJoy = (value: BN): number => {
 export const string2Joy = (value: string): number => {
   return Number(value) / Math.pow(10, 10);
 }
+

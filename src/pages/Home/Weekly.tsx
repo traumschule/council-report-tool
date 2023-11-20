@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import ReactJson from "react-json-view";
 import moment from "moment";
-
 import { useRpc } from "@/hooks";
 import { generateReport2 } from "@/helpers";
-
 import Charts from "./Charts";
+import { weeklyReportTemplateWithMediaStatus, weeklyReportTempleteWithoutMediaStatus } from "@/config";
 
 export default function Weekly() {
   const { api } = useRpc();
@@ -19,19 +18,22 @@ export default function Weekly() {
   const [endBlock, setEndBlock] = useState(0);
   const [activeWeek, setActiveWeek] = useState(-1);
   const [diffweeks, setDiffWeeks] = useState(0);
+  const [fileName, setFileName] = useState("");
   const style = {
     fontWeight: 800,
   }
+  let weeklyReport = "";
 
   const generate = async () => {
+    setFileName("");
     if (!api) return;
-
     if (startBlock * endBlock == 0)
       return;
     setLoading(true);
     const [report2] = await Promise.all([
       generateReport2(api, storageFlag, startBlock, endBlock),
     ]);
+    setFileName("weekly_summary_" + moment(report2.general.endBlock.timestamp).format('DD-MMM-YYYY') + ".md");
     setReport2(report2);
     setLoading(false);
   }
@@ -40,6 +42,38 @@ export default function Weekly() {
     setStorageFlag(!storageFlag);
   }
 
+  const writeWeeklyReport = (obj_data: Object, name_alias: string) => {
+    type obj_data_key = keyof typeof obj_data;
+    Object.keys(obj_data).map((_title) => {
+      if (typeof (obj_data[_title as obj_data_key]) != "object" && _title != "proposals" && obj_data[_title as obj_data_key] != undefined) {
+        const pattern = "{ " + name_alias + "_" + _title + " }";
+        const value = String(obj_data[_title as obj_data_key]);
+        weeklyReport = weeklyReport.replace(pattern, value);
+      } else if (_title == "proposals") {
+        const proposals = obj_data[_title as obj_data_key];
+        type proposals_type = keyof typeof proposals;
+        Object.keys(proposals).map((_status) => {
+          let proposal_txt = "";
+          const statusOfProposals: Array<{
+            id: number,
+            title: string,
+            status: string,
+            createdAt: string,
+            councilApprovals: number,
+          }> = proposals[_status as proposals_type];
+          statusOfProposals.map(((status) => {
+            proposal_txt += "- " + status.title + String.fromCharCode(10);
+          }));
+          const pattern = "{ " + _title + "_" + _status + " }";
+          weeklyReport = weeklyReport.replace(pattern, proposal_txt);
+        })
+
+      } else {
+        if (obj_data[_title as obj_data_key] != undefined && _title != "proposals")
+          writeWeeklyReport(obj_data[_title as obj_data_key], name_alias + "_" + _title);
+      }
+    })
+  }
 
   const onWeekSelectHandler = async (e: any) => {
     if (!api) return;
@@ -60,6 +94,23 @@ export default function Weekly() {
         setEndBlock(currentBlockNumber);
       }
     }
+  }
+
+  const exportWeeklyReport = () => {
+    if (fileName == "")
+      return;
+    if (storageFlag)
+      weeklyReport = weeklyReportTemplateWithMediaStatus;
+    else
+      weeklyReport = weeklyReportTempleteWithoutMediaStatus;
+    writeWeeklyReport(report2, "");
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
+    element.setAttribute('download', fileName);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   }
 
   useEffect(() => {
@@ -108,6 +159,9 @@ export default function Weekly() {
         />
         <input type="checkbox" checked={storageFlag} onChange={storageFlagHandler} />
         <label>Storage Status</label>
+
+      </div>
+      <div className="d-flex">
         <button
           className="btn mr-0 my-5 mx-4"
           onClick={generate}
@@ -115,7 +169,15 @@ export default function Weekly() {
         >
           {loading ? "Generating..." : "Generate report"}
         </button>
+        <button
+          className="btn mr-0 my-5 mx-4"
+          onClick={exportWeeklyReport}
+          disabled={!api || loading}
+        >
+          Export Report
+        </button>
       </div>
+
       <ReactJson src={report2} theme="monokai" collapsed />
       <Charts start={startBlock} end={endBlock} storageStatus={storageFlag} />
     </div>

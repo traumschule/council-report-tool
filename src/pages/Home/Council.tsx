@@ -57,6 +57,10 @@ export default function Council() {
     }
   }
 
+  const exportCouncilReport = () => {
+
+  }
+
   return (
     <div className="prose max-w-3xl m-auto mt-4">
       <div className="rounded-sm p-2 mt-4 border-2 border-[#fff]">
@@ -98,13 +102,22 @@ export default function Council() {
           />'
           <input type="checkbox" checked={storageFlag} onChange={storageFlagHandler} />
           <label>Storage Status</label>
-          <button
-            className="btn mr-0 my-5 mx-4"
-            onClick={generate}
-            disabled={!api || loading}
-          >
-            {loading ? "Generating..." : "Generate report"}
-          </button>
+          <div className="d-flex">
+            <button
+              className="btn mr-0 my-5 mx-4"
+              onClick={generate}
+              disabled={!api || loading}
+            >
+              {loading ? "Generating..." : "Generate report"}
+            </button>
+            {/* <button
+              className="btn mr-0 my-5 mx-4"
+              onClick={exportCouncilReport}
+              disabled={!api || loading}
+            >
+              Export Report
+            </button> */}
+          </div>
         </div>
 
         <ReactJson src={report4} theme="monokai" collapsed />

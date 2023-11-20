@@ -10,6 +10,9 @@ import {
   ElectedCouncil,
   Proposal,
   WorkingGroup,
+  VideoType,
+  VideoNFTType,
+  MemberShipType,
 } from "@/types";
 
 import { getSdk } from "./__generated__/gql";
@@ -222,8 +225,8 @@ export const getVideoNftStatus = async (start: Date, end: Date) => {
   } = await GetNftIssuedCount({
     where: { createdAt_lte: end },
   });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
+  const growthQty = endCount - startCount;
+  const growthPct = (growthQty / startCount) * 100;
 
   const {
     nftBoughtEventsConnection: { totalCount: boughtEventTotalCount },
@@ -259,12 +262,12 @@ export const getVideoNftStatus = async (start: Date, end: Date) => {
   }
   totalVolume = totalVolume.add(auctionVolume);
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
-    saleVolume: toJoy(totalVolume),
-    saleQuantity: boughtEventTotalCount,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty,
+    growthPct,
+    soldVolume: toJoy(totalVolume),
+    soldQty: boughtEventTotalCount,
   };
 };
 
@@ -306,7 +309,6 @@ export const getVideoNftChartData = async (start: Date, end: Date) => {
 
 export const getVideoStatus = async (start: number, end: number) => {
   const { GetVideoCount } = getSdk(client);
-
   const {
     videosConnection: { totalCount: startCount },
   } = await GetVideoCount({
@@ -317,13 +319,13 @@ export const getVideoStatus = async (start: number, end: number) => {
   } = await GetVideoCount({
     where: { createdInBlock_lte: end },
   });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
+  const growthQty = endCount - startCount;
+  const growthPct = (growthQty / startCount) * 100;
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty,
+    growthPct,
   };
 };
 
@@ -481,13 +483,13 @@ export const getMembershipStatus = async (start: Date, end: Date) => {
   } = await GetMembersCount({
     where: { createdAt_lte: end },
   });
-  const growthCount = endCount - startCount;
-  const growthPercent = (growthCount / startCount) * 100;
+  const growthQty = endCount - startCount;
+  const growthPct = (growthQty / startCount) * 100;
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty,
+    growthPct,
   };
 };
 
@@ -889,7 +891,7 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
 
 // wg spending with receiver ID
 
-export const getWGSpendingWithReceiverID = async (start: number, end: number, accountID: Array<string>) => {
+export const getWGSpendingWithReceiverID = async (start: number, end: number, accountID: Array<string>, groupID: string) => {
   const { GetBudgetSpending, GetBudgetSpendingEventsTotalCount } = getSdk(client);
   const { budgetSpendingEventsConnection: { totalCount } } = await GetBudgetSpendingEventsTotalCount({
     where: {
@@ -902,7 +904,10 @@ export const getWGSpendingWithReceiverID = async (start: number, end: number, ac
     where: {
       inBlock_gte: start,
       inBlock_lte: end,
-      reciever_in: accountID
+      reciever_in: accountID,
+      group: {
+        id_eq: groupID
+      }
     },
     limit: totalCount
   });

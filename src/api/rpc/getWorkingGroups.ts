@@ -16,6 +16,7 @@ export async function getWorkingGroups(api: ApiPromise, block?: HexString) {
   }
   const promises = Object.keys(GroupIdToGroupParam).map(async (_group) => {
     const group = _group as GroupIdName;
+    const memberIDs: Array<string> = [];
     let workerNumber = 0;
     let activeWorkerNumber = 0;
     let wg = {
@@ -40,6 +41,13 @@ export async function getWorkingGroups(api: ApiPromise, block?: HexString) {
       if (!_workerInfo.isNone) {
         const workerInfo = _workerInfo.unwrap();
         if (workerInfo.startedLeavingAt.isNone) {
+          const memebrID = workerInfo.memberId.toString();
+          const flag = memberIDs.find((a) => {
+            return a == memebrID;
+          });
+          if (flag)
+            continue;
+          memberIDs.push(memebrID);
           activeWorkerNumber++;
         }
         workerNumber++;

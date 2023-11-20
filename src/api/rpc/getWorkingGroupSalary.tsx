@@ -13,13 +13,19 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
     };
     const promises = Object.keys(GroupIdToGroupParam).map(async (_group) => {
         const group = _group as GroupIdName;
+        const memeberOfGroup: Array<string> = [];
         let workerNumber = 0;
+        let currentLead;
         let wgSalary = {
             leadSalary: 0,
             workerSalary: 0,
             daoSpendingBudget: 0
         };
-        const currentLead = await _api.query[group].currentLead();
+        if (_group == "distributionWorkingGroup") {
+            currentLead = 12;
+        } else {
+            currentLead = await _api.query[group].currentLead();
+        }
         const _activeWorkers = await _api.query[group].activeWorkerCount();
         const _nextWorkerId = await _api.query[group].nextWorkerId();
         const activeWorkers = Number(_activeWorkers);
@@ -32,15 +38,22 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                 const workerInfo = _workerInfo.unwrap();
                 if (workerInfo.startedLeavingAt.isNone) {
                     const memberId = workerInfo.memberId.toString();
+                    const memberFlag = memeberOfGroup.find((a) => {
+                        return a == memberId;
+                    });
+                    if (memberFlag)
+                        continue;
+                    memeberOfGroup.push(memberId);
                     const accounts: Array<string> = [];
                     const workerData = await getWorkerByMemberId(memberId);
-                    accounts.push(workerData[0].roleAccount);
-                    accounts.push(workerData[0].rewardPerBlock);
-                    accounts.push(workerData[0].membership.controllerAccount);
-                    accounts.push(workerData[0].membership.rootAccount);
-                    const daoSpendingBudget = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, accounts);
+                    const groupOfWoker = workerData.filter((a) => { return a.group.id == _group; });
+                    accounts.push(groupOfWoker[0].roleAccount);
+                    accounts.push(groupOfWoker[0].rewardAccount);
+                    accounts.push(groupOfWoker[0].membership.controllerAccount);
+                    accounts.push(groupOfWoker[0].membership.rootAccount);
+                    const daoSpendingBudget = await getWGSpendingWithReceiverID(startBlockNumber, endBlockNumber, accounts, _group);
                     let payout = 0;
-                    workerData
+                    groupOfWoker
                         .map((a) => {
                             a.payouts
                                 .filter((a) => {
@@ -48,7 +61,7 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                                 })
                                 .map((a) => {
                                     payout += string2Joy(a.amount);
-                                })
+                                });
                         });
                     wgSalary.daoSpendingBudget += Math.ceil(daoSpendingBudget);
                     if (i == Number(currentLead)) {
@@ -58,7 +71,6 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                         wgSalary.workerSalary += Math.ceil(daoSpendingBudget);
                         wgSalary.workerSalary += Math.ceil(payout);
                     }
-
                 }
                 workerNumber++;
             }
