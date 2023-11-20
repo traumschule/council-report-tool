@@ -90,7 +90,7 @@ Data over period:
 
 - Total Videos(start block), qty: { _videos_startBlock }
 - Total Videos(end block), qty: { _videos_endBlock }
-- Videos Growth, qty: { _videos_growthPct }
+- Videos Growth, qty: { _videos_growthQty }
 - Videos Growth, %: { _videos_growthPct }
 
 ### Media Storage
@@ -219,7 +219,7 @@ Data over period:
 
 - Total Videos(start block), qty: { _videos_startBlock }
 - Total Videos(end block), qty: { _videos_endBlock }
-- Videos Growth, qty: { _videos_growthPct }
+- Videos Growth, qty: { _videos_growthQty }
 - Videos Growth, %: { _videos_growthPct }
 
 ### Channels
