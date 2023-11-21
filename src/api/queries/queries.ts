@@ -390,10 +390,10 @@ export const getForumCategoryStatus = async (start: Date, end: Date) => {
   const growthPercent = (growthCount / startCount) * 100;
 
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty: growthCount,
+    growthPct: growthPercent,
   };
 };
 
@@ -414,10 +414,10 @@ export const getForumThreadStatus = async (start: Date, end: Date) => {
   const growthPercent = (growthCount / startCount) * 100;
 
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty: growthCount,
+    growthPct: growthPercent,
   };
 };
 
@@ -438,10 +438,10 @@ export const getForumPostStatus = async (start: Date, end: Date) => {
   const growthPercent = (growthCount / startCount) * 100;
 
   return {
-    startCount,
-    endCount,
-    growthCount,
-    growthPercent,
+    startBlock: startCount,
+    endBlock: endCount,
+    growthQty: growthCount,
+    growthPct: growthPercent,
   };
 };
 
@@ -818,14 +818,8 @@ export const getWGSpendingProposal = async (start: number, end: number) => {
 
 // wg status 
 
-export const getWorkingGroupStatus = async (start: Date, end: Date) => {
-  const {
-    GetWorkingGroupApplicationsTotalCount,
-    GetWorkingGroupOpeningsTotalCount,
-    GetOpeningFilledEventsConnection,
-    GetTerminatedWorkerEventsConnection,
-    GetWorkerExitedEventsConnection,
-  } = getSdk(client);
+export const getWGOpening = async (start: Date, end: Date) => {
+  const { GetWorkingGroupOpeningsTotalCount } = getSdk(client);
   const { workingGroupOpeningsConnection: { totalCount: startOpeningCount } } = await GetWorkingGroupOpeningsTotalCount({
     where: {
       createdAt_lte: start,
@@ -838,6 +832,15 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
       status_json: { isTypeOf_eq: "OpeningStatusOpen" },
     },
   });
+  return {
+    startBlock: startOpeningCount,
+    endBlock: endOpeningCount,
+    change: endOpeningCount - startOpeningCount
+  }
+}
+
+export const getWGApplication = async (start: Date, end: Date) => {
+  const { GetWorkingGroupApplicationsTotalCount } = getSdk(client);
   const {
     workingGroupApplicationsConnection: {
       totalCount: startApplicationCount
@@ -856,7 +859,19 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
       createdAt_lte: start
     }
   });
+  return {
+    startBlock: startApplicationCount,
+    endBlock: endApplicationCount,
+    change: endApplicationCount - startApplicationCount
+  }
+}
 
+export const getWGFilledPosition = async (start: Date, end: Date) => {
+  const {
+    GetOpeningFilledEventsConnection,
+    GetTerminatedWorkerEventsConnection,
+    GetWorkerExitedEventsConnection,
+  } = getSdk(client);
   const {
     openingFilledEventsConnection: { totalCount: filledCount },
   } = await GetOpeningFilledEventsConnection({
@@ -876,15 +891,11 @@ export const getWorkingGroupStatus = async (start: Date, end: Date) => {
   });
 
   return {
-    openings: endOpeningCount,
-    openingsChange: (endOpeningCount - startOpeningCount),
-    applications: endApplicationCount,
-    applicationsChange: (endApplicationCount - startApplicationCount),
-    filledCount,
-    terminatedCount,
-    leftCount,
-  };
-};
+    workerHired: filledCount,
+    workerFired: terminatedCount,
+    workerLeft: leftCount
+  }
+}
 
 // wg spending with receiver ID
 

@@ -11,7 +11,6 @@ import {
   getVideoStatus,
   getTotalSupply,
   getForumStatus,
-  getWorkingGroupStatus,
   getMembershipCount,
   getOfficialCirculatingSupply,
   getOfficialTotalSupply,
@@ -28,7 +27,10 @@ import {
   getFundingProposal,
   getCreatorPayoutReward,
   getCouncilRefill,
-  getValidatorReward
+  getValidatorReward,
+  getWGApplication,
+  getWGOpening,
+  getWGFilledPosition
 
 } from "@/api";
 import { MEXC_WALLET, defaultDateTimeFormat } from "@/config";
@@ -375,9 +377,11 @@ export async function generateReport4(
   endBlockNumber: number,
   storageFlag: boolean
 ) {
-  let storageStatus = {
-    totalStorageUsed: 0,
-    storageChanged: 0
+  let mediaStorage = {
+    startBlock: 0,
+    endBlock: 0,
+    growthQty: 0,
+    growthPct: 0
   };
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
@@ -387,31 +391,29 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
-  // working group status
-  const workingGroup = await getWorkingGroupStatus(
-    startBlockTimestamp,
-    endBlockTimestamp
-  );
+
   // nonEmptyChannel
 
   const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockTimestamp);
   const nonEmptyChannel = {
-    startCount,
-    endCount,
+    startBlock: startCount,
+    endBlock: endCount,
     growthQty: (endCount - startCount),
-    growth: (endCount / startCount - 1) * 100
+    growthPct: (endCount / startCount - 1) * 100
   }
 
   // video
 
-  const video = await getVideoStatus(startBlockNumber, endBlockNumber);
+  const videos = await getVideoStatus(startBlockNumber, endBlockNumber);
 
   // storage
 
   if (storageFlag) {
     const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
-    storageStatus.totalStorageUsed = endStorage;
-    storageStatus.storageChanged = decimalAdjust(endStorage - startStorage);
+    mediaStorage.startBlock = startStorage;
+    mediaStorage.endBlock = endStorage;
+    mediaStorage.growthQty = decimalAdjust(endStorage - startStorage);
+    mediaStorage.growthPct = (endStorage / startStorage - 1) * 100;
   }
 
   // forum
@@ -476,9 +478,9 @@ export async function generateReport4(
   const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
   const issuanceChange = endIssuance - startIssuance;
   const inflation = {
-    startIssuance,
-    endIssuance,
-    termIssuance: issuanceChange,
+    startBlock: startIssuance,
+    endBlock: endIssuance,
+    changedIssuance: issuanceChange,
     Inflation: issuanceChange / Math.pow(10, 9)
   }
 
@@ -516,17 +518,23 @@ export async function generateReport4(
       }
       wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
     });
+  // Working Group Opening Application FilledPosition
+  const wgOpening = await getWGOpening(startBlockTimestamp, endBlockTimestamp);
+  const wgApplication = await getWGApplication(startBlockTimestamp, endBlockTimestamp);
+  const wgFilledPosition = await getWGFilledPosition(startBlockTimestamp, endBlockTimestamp);
 
   return {
     nonEmptyChannel,
-    video,
-    storage: storageStatus,
+    videos,
+    mediaStorage: storageFlag ? mediaStorage : undefined,
     councilBudget,
     inflation,
     wgBudgets,
     forum,
     proposal,
     membership,
-    workingGroup,
+    wgOpening,
+    wgApplication,
+    wgFilledPosition
   };
 }
