@@ -11,6 +11,7 @@ export async function getBalance(
   if (blockHash) {
     // @ts-ignore
     _api = await api.at(blockHash);
+    
   }
   const {
     data: { free: balance },

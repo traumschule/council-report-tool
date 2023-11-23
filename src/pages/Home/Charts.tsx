@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import {
   BarChart,
   CartesianGrid,
@@ -9,7 +10,7 @@ import {
   Bar,
 } from "recharts";
 import ReactJson from "react-json-view";
-
+import DomToImage from "dom-to-image";
 import {
   getVideoChartData,
   getVideoNftChartData,
@@ -23,7 +24,7 @@ import { DailyData } from "@/hooks/types";
 function JoyChart({ data, title }: { data: DailyData[]; title: string }) {
   if (data.length === 0) return <></>;
   return (
-    <div className="p-2">
+    <div className="p-2" id="graph">
       <h3>{title}</h3>
       <BarChart width={730} height={250} data={data}>
         <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
@@ -53,19 +54,55 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
   const [loading, setLoading] = useState(false);
   const { api } = useRpc();
 
-  // const generate = useCallback(() => {
-  //   if (!startTimestamp || !endTimestamp) return;
-  //   getVideoChartData(startTimestamp, endTimestamp).then(setVideoData);
+  const generateImg = () => {
+    upldateImagewithFetch();
+    // let node = document.getElementById('graph');
+    // let options = { quality: 1 };
+    // DomToImage.toPng(node as Node, options).then((imgUrl) => {
+    //   let img = new Image();
+    //   img.src = imgUrl;
+    //   // document.body.appendChild(img);
+    //   // var link = document.createElement('a');
+    //   // link.download = 'my-image-name.jpeg';
+    //   // link.href = imgUrl;
+    //   // link.click();
+    //   // uploadImage(imgUrl);
+    // })
+  }
 
-  //   getVideoNftChartData(startTimestamp, endTimestamp).then(setVideoNftData);
+  const upldateImagewithFetch = () => {
+    fetch('https://api.imgur.com/3/image', {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: "Client-ID aeb5866135440bd"
+      },
+      body: JSON.stringify({ image: "https://i.imgur.com/F5LvVSE.png" })
+    }).then((res) => {
+      console.log(res)
+    }).catch((err) => {
+      console.log(err)
+    })
+  }
 
-  //   // getChannelChartData(end, startTimestamp).then(setChannelData);
+  const uploadImage = () => {
 
-  // getMembershipChartData(startTimestamp, endTimestamp).then(
-  //   setMembershipData
-  // );
-  //   // getStorageChartData(startTimestamp, endTimestamp).then(setStorageData);
-  // }, [startTimestamp, endTimestamp]);
+    axios.post('https://api.imgur.com/3/image',
+      { image: "https://i.imgur.com/F5LvVSE.png" },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: "Client-ID aeb5866135440bd"
+        },
+      },
+    ).then((res) => {
+      console.log(res);
+    }).catch((err) => {
+      console.log(err);
+    })
+  }
 
   const generate = async () => {
     if (!start || !end) return;
@@ -96,14 +133,21 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
     setLoading(false);
   }
 
+
   return (
     <div>
+      <div className="d-flex">
+
+      </div>
       <button
         className="btn mr-0 my-5 mx-4"
         onClick={generate}
         disabled={!api || loading}
       >
         {loading ? "Generating..." : "Generate Chart"}
+      </button>
+      <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
+        Generat Image
       </button>
       <JoyChart data={videoData} title="New Videos" />
       <JoyChart data={videoNftData} title="New NFT Minted" />
