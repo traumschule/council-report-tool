@@ -70,24 +70,21 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
     // })
   }
 
-  const upldateImagewithFetch = () => {
-    fetch('https://api.imgur.com/3/image', {
+  const upldateImagewithFetch = async () => {
+    const body = {
+      image: "https://i.imgur.com/F5LvVSE.png"
+    }
+    const response = await fetch('https://api.imgur.com/3/image', {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         Authorization: "Client-ID aeb5866135440bd"
       },
-      body: JSON.stringify({ image: "https://i.imgur.com/F5LvVSE.png" })
-    }).then((res) => {
-      console.log("success");
-      if (!res.body)
-        return;
-      console.log(JSON.stringify(res.body));
-    }).catch((err) => {
-      console.log("error")
-      console.log(err)
-    })
+      body: JSON.stringify(body)
+    });
+    const content = await response.json();
+    console.log(content);
   }
 
   const uploadImage = () => {
@@ -150,9 +147,9 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
       >
         {loading ? "Generating..." : "Generate Chart"}
       </button>
-      {/* <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
+      <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
         Generat Image
-      </button> */}
+      </button>
       <JoyChart data={videoData} title="New Videos" />
       <JoyChart data={videoNftData} title="New NFT Minted" />
       <JoyChart data={channelData} title="Non-empty channels" />
