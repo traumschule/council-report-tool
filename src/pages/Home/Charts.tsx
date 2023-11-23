@@ -146,9 +146,9 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
       >
         {loading ? "Generating..." : "Generate Chart"}
       </button>
-      <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
+      {/* <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
         Generat Image
-      </button>
+      </button> */}
       <JoyChart data={videoData} title="New Videos" />
       <JoyChart data={videoNftData} title="New NFT Minted" />
       <JoyChart data={channelData} title="Non-empty channels" />
