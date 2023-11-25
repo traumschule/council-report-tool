@@ -19,6 +19,18 @@ export const GroupIdToGroupParam = {
   operationsWorkingGroupGamma: "Marketing",
 } as const;
 
+export const OverallBudget = {
+  councilReward: "councilReward",
+  wgSpending: "wgSpending",
+  fundingProposal: "fundingProposal",
+  creatorPayoutReward: "creatorPayoutReward",
+  validatorReward: "validatorReward",
+  fees: "fees",
+  grandTotal: "grandTotal"
+}
+
+export type OverallBudgetKeys = keyof typeof OverallBudget;
+
 export type GroupIdName = keyof typeof GroupIdToGroupParam;
 
 export type GroupShortIDName = typeof GroupIdToGroupParam[GroupIdName];

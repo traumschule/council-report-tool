@@ -3,6 +3,14 @@ query GetNftIssuedCount($where: NftIssuedEventWhereInput) {
     totalCount
   }
 }
+
+query GetNftIssued($where: NftIssuedEventWhereInput, $limit:Int, $offset:Int){
+  nftIssuedEvents(where:$where limit:$limit offset:$offset orderBy:createdAt_ASC){
+    id
+    createdAt
+  }
+}
+
 query GetNftSaleCount($where: NftBoughtEventWhereInput) {
   nftBoughtEventsConnection(where: $where) {
     totalCount

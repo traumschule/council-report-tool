@@ -28,11 +28,12 @@ export default function Council() {
 
   const generate = async () => {
     if (!api) return;
+    if (!data) return;
     if (startBlock * endBlock == 0)
       return;
     setLoading(true);
     const [report4] = await Promise.all([
-      generateReport4(api, startBlock, endBlock, storageFlag),
+      generateReport4(api, data[activeCouncil - 1].id, startBlock, endBlock, 0.031, 0.025, storageFlag),
     ]);
     setReport4(report4);
     setLoading(false);
@@ -60,6 +61,10 @@ export default function Council() {
   const exportCouncilReport = () => {
 
   }
+
+  useEffect(() => {
+
+  }, [])
 
   return (
     <div className="prose max-w-3xl m-auto mt-4">

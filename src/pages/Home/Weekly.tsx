@@ -3,8 +3,46 @@ import ReactJson from "react-json-view";
 import moment from "moment";
 import { useRpc } from "@/hooks";
 import { generateReport2 } from "@/helpers";
-import Charts from "./Charts";
-import { weeklyReportTemplateWithMediaStatus, weeklyReportTempleteWithoutMediaStatus } from "@/config";
+import { DailyData } from "@/hooks/types";
+import {
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Bar,
+} from "recharts";
+import DomToImage from "dom-to-image";
+import { weeklyReportTemplateWithMediaStatus, weeklyReportTempleteWithoutMediaStatus, proposalLink } from "@/config";
+
+
+function JoyChart({ data, title, id }: { data: DailyData[]; title: string, id: string }) {
+  if (data.length === 0) return <></>;
+  return (
+    <div className="p-2" id="graph">
+      <h3>{title}</h3>
+      <div id={id}>
+        <BarChart id={id} width={730} height={250} data={data}>
+          <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(val: Date) => {
+              const date = val.toLocaleDateString("en-US");
+              return date.slice(0, date.length - 5);
+            }}
+          />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="count" fill="#8884d8" name={title} />
+        </BarChart>
+      </div>
+
+      <ReactJson src={{ title, data }} theme="monokai" collapsed />
+    </div>
+  );
+}
 
 export default function Weekly() {
   const { api } = useRpc();
@@ -12,6 +50,11 @@ export default function Weekly() {
   const baseStartBlockNumber: number = 3531601;
   const blocksPerWeek: number = 100800;
   const [report2, setReport2] = useState({});
+  const [videoChart, setVideoChart] = useState<DailyData[]>([]);
+  const [channelChart, setChannelChart] = useState<DailyData[]>([]);
+  const [storageChart, setStorageChart] = useState<DailyData[]>([]);
+  const [nftChart, setNftChart] = useState<DailyData[]>([]);
+  const [membershipChart, setMemberShipChart] = useState<DailyData[]>([]);
   const [loading, setLoading] = useState(false);
   const [storageFlag, setStorageFlag] = useState(false);
   const [startBlock, setStartBlock] = useState(0);
@@ -19,6 +62,13 @@ export default function Weekly() {
   const [activeWeek, setActiveWeek] = useState(-1);
   const [diffweeks, setDiffWeeks] = useState(0);
   const [fileName, setFileName] = useState("");
+  const graphTypes = [
+    "videosChart",
+    "videoNftChart",
+    "nonEmptyChannelChart",
+    "membershipChart",
+    "mediaStorageChart"
+  ]
   const style = {
     fontWeight: 800,
   }
@@ -35,6 +85,12 @@ export default function Weekly() {
     ]);
     setFileName("weekly_summary_" + moment(report2.general.endBlock.timestamp).format('DD-MMM-YYYY') + ".md");
     setReport2(report2);
+    setVideoChart([...report2.videos.chartData]);
+    if (report2.mediaStorage)
+      setStorageChart([...report2.mediaStorage.chartData]);
+    setChannelChart([...report2.nonEmptyChannel.chartData]);
+    setNftChart([...report2.videoNFTs.chartData]);
+    setMemberShipChart([...report2.membership.chartData]);
     setLoading(false);
   }
 
@@ -46,7 +102,7 @@ export default function Weekly() {
     type obj_data_key = keyof typeof obj_data;
     Object.keys(obj_data).map((_title) => {
       if (typeof (obj_data[_title as obj_data_key]) != "object" && _title != "proposals" && obj_data[_title as obj_data_key] != undefined) {
-        const pattern = "{ " + name_alias + "_" + _title + " }";
+        const pattern = name_alias + "_" + _title;
         const value = String(obj_data[_title as obj_data_key]);
         weeklyReport = weeklyReport.replace(pattern, value);
       } else if (_title == "proposals") {
@@ -62,9 +118,9 @@ export default function Weekly() {
             councilApprovals: number,
           }> = proposals[_status as proposals_type];
           statusOfProposals.map(((status) => {
-            proposal_txt += "- " + status.title + String.fromCharCode(10);
+            proposal_txt += "- [" + status.title + "](" + proposalLink + status.id + ")" + String.fromCharCode(10);
           }));
-          const pattern = "{ " + _title + "_" + _status + " }";
+          const pattern = _title + "_" + _status;
           weeklyReport = weeklyReport.replace(pattern, proposal_txt);
         })
 
@@ -104,6 +160,7 @@ export default function Weekly() {
     else
       weeklyReport = weeklyReportTempleteWithoutMediaStatus;
     writeWeeklyReport(report2, "");
+    exportImage();
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
     element.setAttribute('download', fileName);
@@ -111,6 +168,55 @@ export default function Weekly() {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+  }
+
+  const uploadImage = async (imgData: string) => {
+    const body = {
+      image: imgData,
+      type: "base64"
+    }
+    const response = await fetch('https://api.imgur.com/3/image', {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: "Client-ID aeb5866135440bd"
+      },
+      body: JSON.stringify(body)
+    });
+    const content = await response.json();
+
+    if (content.success)
+      return content.data.link;
+    else
+      return false;
+  }
+
+  const exportImage = async () => {
+    const promise = graphTypes.map(async (_type) => {
+      let node = document.getElementById(_type);
+      if (node) {
+        let options = { quality: 1 };
+        DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
+          const imgLink = await uploadImage(imgUrl.split(',')[1]);
+          console.log(imgLink)
+          if (imgLink) {
+            const pattern = "_graph_" + _type;
+            weeklyReport = weeklyReport.replace(pattern, imgLink);
+          }
+          // let img = new Image();
+          // img.src = imgUrl;
+          // document.body.appendChild(img);
+          // var link = document.createElement('a');
+          // link.download = 'my-image-name.jpeg';
+          // link.href = imgUrl;
+          // link.click();
+          // uploadImage(imgUrl);
+        })
+      }
+
+    })
+    await Promise.all(promise);
   }
 
   useEffect(() => {
@@ -176,10 +282,24 @@ export default function Weekly() {
         >
           Export Report
         </button>
+        <button
+          className="btn mr-0 my-5 mx-4"
+          onClick={exportImage}
+        >
+          Export Image
+        </button>
       </div>
 
       <ReactJson src={report2} theme="monokai" collapsed />
-      <Charts start={startBlock} end={endBlock} storageStatus={storageFlag} />
+
+      <JoyChart data={videoChart} title="New Videos" id="videosChart" />
+      <JoyChart data={nftChart} title="New NFT Minted" id="videoNftChart" />
+      <JoyChart data={channelChart} title="Non-empty channels" id="nonEmptyChannelChart" />
+      <JoyChart data={membershipChart} title="Membership" id="membershipChart" />
+      {
+        storageFlag ? (<JoyChart data={storageChart} title="New Media Uploads (GB)" id="mediaStorageChart" />
+        ) : null}
+      {/* <Charts start={startBlock} end={endBlock} storageStatus={storageFlag} /> */}
     </div>
   );
 }

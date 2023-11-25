@@ -1,7 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 import { HexString } from "@polkadot/util/types";
 import { toJoy } from "@/helpers";
-import { getMemeberShipHandle } from "..";
+import { getMemeberShipHandle, getWGFilledPosition } from "..";
 import { GroupIdToGroupParam, GroupIdName, GroupShortIDName } from "@/types";
 
 
@@ -58,4 +58,31 @@ export async function getWorkingGroups(api: ApiPromise, block?: HexString) {
   });
   await Promise.all(promises);
   return workingGroup;
+}
+
+export const getWGWorkerStatus = async (api: ApiPromise, endBlock: HexString, startDate: Date, endDate: Date) => {
+  let wgWorkers = await getWorkingGroups(api, endBlock);
+  const wgWokrerStatus = {} as {
+    [key in GroupShortIDName]: {
+      lead: string;
+      headCound: number;
+      hired: number;
+      fired: number;
+      left: number;
+    }
+  }
+  const promise = Object.keys(GroupIdToGroupParam)
+    .map(async (_group) => {
+      const { workerFired, workerHired, workerLeft } = await getWGFilledPosition(startDate, endDate, _group);
+      let wgStatus = {
+        lead: wgWorkers[GroupIdToGroupParam[_group as GroupIdName]].leadName,
+        headCound: wgWorkers[GroupIdToGroupParam[_group as GroupIdName]].workerNumber,
+        hired: workerHired,
+        fired: workerFired,
+        left: workerLeft,
+      }
+      wgWokrerStatus[GroupIdToGroupParam[_group as GroupIdName]] = wgStatus
+    })
+  await Promise.all(promise);
+  return wgWokrerStatus;
 }

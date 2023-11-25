@@ -97,3 +97,7 @@ export const decimalAdjust = (value: number): number => {
   let result = Math.ceil(value * Math.pow(10, 2)) / Math.pow(10, 2);
   return result;
 }
+
+export const decimal3DAdjust = (value: number): number => {
+  return Math.ceil(value * Math.pow(10, 3)) / Math.pow(10, 3);
+}

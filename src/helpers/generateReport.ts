@@ -3,46 +3,43 @@ import moment from "moment";
 import {
   getBalance,
   getBlockHash,
-  getCouncilBudget,
   getChannelStatus,
   getMembershipStatus,
   getProposals,
   getVideoNftStatus,
   getVideoStatus,
   getTotalSupply,
-  getForumStatus,
   getMembershipCount,
   getOfficialCirculatingSupply,
   getOfficialTotalSupply,
   getWorkingGroupBudget,
   getWGRefillProposal,
-  getWGSpendingProposal,
   client as graphQLClient,
   getSdk,
   getWorkingGroups,
-  getStorageStatusByBlock,
+  getStorageStatus,
   getWorkingGroupSalary,
   getCouncilReward,
-  getWGSpendingBudget,
   getFundingProposal,
   getCreatorPayoutReward,
-  getCouncilRefill,
   getValidatorReward,
-  getWGApplication,
-  getWGOpening,
-  getWGFilledPosition
-
+  getWGWorkerStatus,
+  getElectionRoundWithUniqueID,
+  getElectedCouncils
 } from "@/api";
 import { MEXC_WALLET, defaultDateTimeFormat } from "@/config";
-import { toJoy } from "./bn";
+import { toJoy, string2Joy, } from "./bn";
+import BN from "bn.js";
 import {
   GroupIdName,
   ProposalStatus,
   GroupIdToGroupParam,
-  GroupShortIDName
+  GroupShortIDName,
+  OverallBudgetKeys
 
 } from "@/types";
-import { decimalAdjust } from "./utils";
+import { decimalAdjust, decimal3DAdjust } from "./utils";
+import { DailyData } from "@/hooks/types";
 const INITIAL_SUPPLY = 1_000_000_000;
 
 export async function generateReport1(api: ApiPromise, blockNumber: number, storageFlag: boolean) {
@@ -83,7 +80,7 @@ export async function generateReport1(api: ApiPromise, blockNumber: number, stor
     totalStorage: 0
   };
   if (storageFlag) {
-    const { endStorage } = await getStorageStatusByBlock(blockTimestamp);
+    const { endStorage } = await getStorageStatus(blockTimestamp);
     content.totalStorage = endStorage
   }
 
@@ -178,94 +175,39 @@ export async function generateReport2(
   const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
   const inflationChanged = endInflation - startInflation;
 
-  // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
+  // // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
-  let wgSpentBudget = 0;
   const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
-  const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
-  const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
-  Object.keys(wgBudget).map((wgName) => {
-    wgSpentBudget += wgBudget[wgName as GroupIdName].startBudget;
-    wgSpentBudget -= wgBudget[wgName as GroupIdName].endBudget;
-    if (wgRefillProposal[wgName as GroupIdName]) {
-      wgSpentBudget += wgRefillProposal[wgName as GroupIdName];
-    }
-  });
+  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
+  const wgSpent = Object.keys(wgSalary)
+    .reduce((a, b) => a + wgSalary[b as GroupIdName].leadSalary + wgSalary[b as GroupIdName].workerSalary, 0);
+
   const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
   const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
-  const grandTotal = councilRewardBudget + wgSpentBudget + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget;
+  const grandTotal = councilRewardBudget + wgSpent + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget;
   const daoSpending = {
+    startIssuance,
+    endIssuance,
+    mintedToken: grandTotal,
     councilReward: councilRewardBudget,
-    wgSpent: wgSpentBudget,
+    wgSpent: wgSpent,
     fundingProposals: fundingProposalBudget,
     creatorPayoutRewards: creatorPayoutRewardBudget,
     validatorRewards: validatorRewardsBudget,
+    fees: grandTotal - issuanceChange,
     grandTotal
   };
+  const totalSupply = await getOfficialTotalSupply();
+  const circulatingSupply = await getOfficialCirculatingSupply();
   const supply = {
+    totalSupply,
     inflationChanged,
-    changedToken: issuanceChange,
-    mintedToken: grandTotal,
+    circulatingSupply,
+    mintedToken: issuanceChange,
     burnedToken: grandTotal - issuanceChange,
   };
-  // 6. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#council-budget
 
-  const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
-    api,
-    startBlockHash,
-    endBlockHash
-  );
-  const refillCouncilBudget = await getCouncilRefill(startBlockNumber, endBlockNumber);
-  const councilBudget = {
-    startBudget: startCouncilBudget,
-    endBudget: endCouncilBudget,
-    spendingBudget: (councilRewardBudget + creatorPayoutRewardBudget + wgSpentBudget + fundingProposalBudget),
-    refillBudget: refillCouncilBudget,
-  }
-
-  // 7. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#wg-budgets
-
-  const wgBudgets = {} as {
-    [key in GroupShortIDName]: {
-      startBudget: number;
-      endBudget: number;
-      totalRefilled: number;
-      totalSpending: number;
-      spendingProposals: number;
-      leadSalary: number;
-      workerSalary: number;
-    }
-  };
-  const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
-  const wgSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
-  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
-  const promises = Object.keys(GroupIdToGroupParam)
-    .map(async (_group) => {
-      let wgData = {
-        startBudget: wgBudget[_group as GroupIdName].startBudget,
-        endBudget: wgBudget[_group as GroupIdName].endBudget,
-        totalRefilled: 0,
-        totalSpending: 0,
-        leadSalary: wgSalary[_group as GroupIdName].leadSalary,
-        workerSalary: wgSalary[_group as GroupIdName].workerSalary,
-        spendingProposals: 0
-      }
-      wgData.totalSpending = wgData.leadSalary + wgData.workerSalary;
-      if (wgSpending[_group as GroupIdName]) {
-        wgData.totalSpending += wgSpending[_group as GroupIdName];
-      }
-      if (wgSpendingProposal[_group as GroupIdName]) {
-        wgData.spendingProposals = wgSpendingProposal[_group as GroupIdName];
-        wgData.totalSpending += wgSpendingProposal[_group as GroupIdName];
-      }
-      if (wgRefillProposal[_group as GroupIdName]) {
-        wgData.totalRefilled = wgRefillProposal[_group as GroupIdName];
-      }
-      wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
-    });
-
-  await Promise.all(promises);
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
   const videos = await getVideoStatus(
     startBlockNumber,
@@ -276,27 +218,30 @@ export async function generateReport2(
     startBlock: 0,
     endBlock: 0,
     growthQty: 0,
-    growthPct: 0
+    growthPct: 0,
+    chartData: [] as Array<DailyData>
   }
 
   if (storageFlag) {
-    const { startStorage, endStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
+    const { startStorage, endStorage, chartData } = await getStorageStatus(endBlockTimestamp, startBlockTimestamp);
     mediaStorage.startBlock = startStorage;
     mediaStorage.endBlock = endStorage;
     mediaStorage.growthQty = decimalAdjust(endStorage - startStorage);
     mediaStorage.growthPct = decimalAdjust((endStorage / startStorage - 1)) * 100;
+    mediaStorage.chartData = chartData;
   }
 
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
-  const { startCount, endCount } = await getChannelStatus(
+  const nonEmptyChannelStatus = await getChannelStatus(
     endBlockNumber,
     startBlockTimestamp
   );
   const nonEmptyChannel = {
-    startBlock: startCount,
-    endBlock: endCount,
-    growthQty: (endCount - startCount),
-    growthPct: (endCount / startCount - 1) * 100
+    startBlock: nonEmptyChannelStatus.startCount,
+    endBlock: nonEmptyChannelStatus.endCount,
+    growthQty: (nonEmptyChannelStatus.endCount - nonEmptyChannelStatus.startCount),
+    growthPct: decimalAdjust((nonEmptyChannelStatus.endCount / nonEmptyChannelStatus.startCount - 1) * 100),
+    chartData: nonEmptyChannelStatus.chartData
   }
 
   // 11. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#video-nfts
@@ -325,29 +270,30 @@ export async function generateReport2(
 
   const executed = proposals
     .filter((p) => p.status === "executed");
-
-  const notPassedStatuses: ProposalStatus[] = [
-    "vetoed",
-    "executionFailed",
-    "slashed",
-    "rejected",
-    "expired",
-    "cancelled",
-    "canceledByRuntime",
-  ];
-  const notPassed = proposals
-    .filter((p) =>
-      notPassedStatuses.includes(p.status)
-    );
-  const underReviewStatuses: ProposalStatus[] = [
-    "deciding",
-    "gracing",
-    "dormant",
-  ];
-  const underReview = proposals
-    .filter((p) =>
-      underReviewStatuses.includes(p.status)
-    );
+  const deciding = proposals
+    .filter((p) => p.status === "deciding");
+  // const notPassedStatuses: ProposalStatus[] = [
+  //   "vetoed",
+  //   "executionFailed",
+  //   "slashed",
+  //   "rejected",
+  //   "expired",
+  //   "cancelled",
+  //   "canceledByRuntime",
+  // ];
+  // const notPassed = proposals
+  //   .filter((p) =>
+  //     notPassedStatuses.includes(p.status)
+  //   );
+  // const underReviewStatuses: ProposalStatus[] = [
+  //   "deciding",
+  //   "gracing",
+  //   "dormant",
+  // ];
+  // const underReview = proposals
+  //   .filter((p) =>
+  //     underReviewStatuses.includes(p.status)
+  //   );
 
   return {
     general,
@@ -355,8 +301,6 @@ export async function generateReport2(
     mexc,
     supply,
     daoSpending,
-    councilBudget,
-    wgBudgets,
     videos,
     nonEmptyChannel,
     videoNFTs,
@@ -364,8 +308,7 @@ export async function generateReport2(
     mediaStorage: storageFlag ? mediaStorage : undefined,
     proposals: {
       executed,
-      notPassed,
-      underReview,
+      deciding
     },
   };
 }
@@ -373,16 +316,14 @@ export async function generateReport2(
 // Council report
 export async function generateReport4(
   api: ApiPromise,
+  roundNumber: string,
   startBlockNumber: number,
   endBlockNumber: number,
-  storageFlag: boolean
+  prevEMA: number,
+  curEMA: Number,
+  storageFlag: boolean,
 ) {
-  let mediaStorage = {
-    startBlock: 0,
-    endBlock: 0,
-    growthQty: 0,
-    growthPct: 0
-  };
+  // general
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
@@ -391,150 +332,331 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
+  let currentTerm = 0;
+  const general = {
+    startBlock: {
+      block: startBlockNumber,
+      hash: startBlockHash,
+      timeStamp: moment(startBlockTimestamp).format(defaultDateTimeFormat)
+    },
+    endBlock: {
+      block: endBlockNumber,
+      hash: endBlockHash,
+      timeStamp: moment(endBlockTimestamp).format(defaultDateTimeFormat)
+    }
+  }
+  // composition 
+  const electionRound = await getElectionRoundWithUniqueID(roundNumber);
+  let composition = undefined;
+  if (!electionRound) {
+    composition = undefined;
+  } else {
+    const castVotes = electionRound.castVotes.reduce((a, b) => a + string2Joy(b.stake), 0);
+    currentTerm = electionRound.cycleId;
+    const candiates: Array<{
+      member: string,
+      pct: number
+    }> = [];
+    electionRound.candidates.map((c) => {
+      let candiate = {
+        member: c.member.handle,
+        pct: Math.ceil(string2Joy(c.votePower) / castVotes * 100)
+      }
+      candiates.push(candiate);
+    })
+    composition = {
+      id: electionRound.id,
+      candiates
+    }
+  }
+
+  // EMA 30
+
+  const EMA30 = {
+    prevEMA,
+    curEMA
+  }
+  // inflation 
+
+  const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
+  const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
+  const startInflation = ((startIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
+  const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
+  const inflationChange = endInflation - startInflation;
+  const issuanceChange = endIssuance - startIssuance;
+
+  let projectInflations: Array<{
+    term: number;
+    mintedToken: number;
+    inflation: number;
+  }> = [];
+  const electedCouncils = await getElectedCouncils();
+
+  const promise = electedCouncils.map(async (e, index) => {
+    if (e.endedAtBlock) {
+      let inflation_tmp = {
+        term: index + 1,
+        mintedToken: 0,
+        inflation: 0
+      }
+      const startElectedBlockHash = await getBlockHash(api, e.electedAtBlock);
+      const endElectedBlockHash = await getBlockHash(api, e.endedAtBlock);
+      const startElectedIssuance = toJoy(await getTotalSupply(api, startElectedBlockHash));
+      const endElectedIssuance = toJoy(await getTotalSupply(api, endElectedBlockHash));
+      const changedIssuanceOfElection = (endElectedIssuance - startElectedIssuance) / Math.pow(10, 6);
+      const startElectedInflation = ((startElectedIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
+      const endElectedInflation = ((endElectedIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
+      const inflationChanged = endElectedInflation - startElectedInflation;
+      inflation_tmp.inflation = decimal3DAdjust(inflationChanged);
+      inflation_tmp.mintedToken = decimalAdjust(changedIssuanceOfElection);
+      projectInflations.push(inflation_tmp);
+    }
+  });
+
+  await Promise.all(promise);
+  projectInflations = projectInflations.sort((a, b) => {
+    return a.term - b.term;
+  })
+  let yearMintedToken = projectInflations.reduce((a, b) => a + b.mintedToken, 0);
+  let yearInflation = projectInflations.reduce((a, b) => a + b.inflation, 0);
+  if (projectInflations.length < 24) {
+    const leftCouncil = 24 - projectInflations.length;
+    yearMintedToken += leftCouncil * issuanceChange / Math.pow(10, 6);
+    yearInflation += leftCouncil * inflationChange;
+  }
+  const inflation = {
+    startBlock: startIssuance,
+    endBlock: endIssuance,
+    changedIssuance: issuanceChange,
+    Inflation: inflationChange,
+    yearMintedToken: decimalAdjust(yearMintedToken),
+    yearInflation: decimal3DAdjust(yearInflation)
+  }
+
+  const wgWorkerStatus = await getWGWorkerStatus(api, endBlockHash, startBlockTimestamp, endBlockTimestamp);
 
   // nonEmptyChannel
 
-  const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockTimestamp);
-  const nonEmptyChannel = {
-    startBlock: startCount,
-    endBlock: endCount,
-    growthQty: (endCount - startCount),
-    growthPct: (endCount / startCount - 1) * 100
-  }
+  // const { startCount, endCount } = await getChannelStatus(endBlockNumber, startBlockTimestamp);
+  // const nonEmptyChannel = {
+  //   startBlock: startCount,
+  //   endBlock: endCount,
+  //   growthQty: (endCount - startCount),
+  //   growthPct: (endCount / startCount - 1) * 100
+  // }
 
   // video
 
-  const videos = await getVideoStatus(startBlockNumber, endBlockNumber);
+  // const videos = await getVideoStatus(startBlockNumber, endBlockNumber);
 
   // storage
-
+  let mediaStorage = {
+    startBlock: 0,
+    endBlock: 0,
+    growthQty: 0,
+    growthPct: 0
+  };
   if (storageFlag) {
-    const { endStorage, startStorage } = await getStorageStatusByBlock(endBlockTimestamp, startBlockTimestamp);
+    const { endStorage, startStorage } = await getStorageStatus(endBlockTimestamp, startBlockTimestamp);
     mediaStorage.startBlock = startStorage;
     mediaStorage.endBlock = endStorage;
     mediaStorage.growthQty = decimalAdjust(endStorage - startStorage);
     mediaStorage.growthPct = (endStorage / startStorage - 1) * 100;
   }
 
-  // forum
-
-  const forum = await getForumStatus(startBlockTimestamp, endBlockTimestamp);
-
-  // proposal
-
-  const proposals = await getProposals(startBlockTimestamp, endBlockTimestamp);
-  const proposal = {
-    total: proposals.length,
-    passed: proposals.filter((p) => p.status === "executed").length,
-    rejected: proposals.filter((p) => p.status === "rejected").length,
-    expired: proposals.filter((p) => p.status === "expired").length,
-  };
-
   // membership
 
-  const membership = await getMembershipStatus(
-    startBlockTimestamp,
-    endBlockTimestamp
-  );
+  // const membership = await getMembershipStatus(
+  //   startBlockTimestamp,
+  //   endBlockTimestamp
+  // );
 
-  // available council budget
-
-  const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
-    api,
-    startBlockHash,
-    endBlockHash
-  );
-  const refillCouncilBudget = await getCouncilRefill(startBlockNumber, endBlockNumber);
-  const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
-  const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
-  let wgSpentBudget = 0;
-  const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
-  const wgBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
-  const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
-  Object.keys(wgBudget).map((wgName) => {
-    wgSpentBudget += wgBudget[wgName as GroupIdName].startBudget;
-    wgSpentBudget -= wgBudget[wgName as GroupIdName].endBudget;
-    if (wgRefillProposal[wgName as GroupIdName]) {
-      wgSpentBudget += wgRefillProposal[wgName as GroupIdName];
-    }
-  });
-  const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
-  const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
-  const councilBudget = {
-    startCouncilBudget,
-    spendingCouncilBudget: (councilRewardBudget + creatorPayoutRewardBudget + wgSpentBudget + fundingProposalBudget),
-    refillCouncilBudget,
-    councilReward: councilRewardBudget,
-    wgSpent: wgSpentBudget,
-    fundingProposals: fundingProposalBudget,
-    creatorPayoutRewards: creatorPayoutRewardBudget,
-    validatorRewards: validatorRewardsBudget,
-    endCouncilBudget
-  }
-
-  // inflation 
-
-  const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
-  const endIssuance = toJoy(await getTotalSupply(api, endBlockHash));
-  const issuanceChange = endIssuance - startIssuance;
-  const inflation = {
-    startBlock: startIssuance,
-    endBlock: endIssuance,
-    changedIssuance: issuanceChange,
-    Inflation: issuanceChange / Math.pow(10, 9)
-  }
-
-  // available working group budget
-  let wgBudgets = {} as {
+  // calculate the current WG budget
+  let wgBudgetsOfJoy = {} as {
     [key in GroupShortIDName]: {
       startWGBudget: number
       endWGBudget: number;
       refillBudget: number;
-      discretionarySpending: number;
-      spendingProposal: number
       workerRewards: number;
       leadRewards: number;
+      actualSpending: number;
     }
   }
-  const daoSpending = await getWGSpendingBudget(startBlockNumber, endBlockNumber);
-  const wgSpendingProposal = await getWGSpendingProposal(startBlockNumber, endBlockNumber);
-  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
+  let wgBudgetsOfUsd = {} as {
+    [key in GroupShortIDName]: {
+      startWGBudget: number
+      endWGBudget: number;
+      refillBudget: number;
+      workerRewards: number;
+      leadRewards: number;
+      actualSpending: number;
+    }
+  }
+  let wgSpending = {} as {
+    [key in GroupShortIDName]: {
+      prevSpendingOfJoy: number;
+      prevSpendingOfUsd: number;
+      currentSpendingOfJoy: number;
+      currentSpendingOfUsd: number;
+    }
+  }
+  const currentWGRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
+  const currentWGBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
+  const currentWGSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
+  const prevTermStartBlock = electedCouncils[currentTerm - 2].electedAtBlock;
+  let prevTermEndBlock = electedCouncils[currentTerm - 2].endedAtBlock;
+  if (!prevTermEndBlock)
+    prevTermEndBlock = prevTermStartBlock;
+  const prevTermStartBlockHash = await getBlockHash(api, prevTermStartBlock);
+  const prevTermEndBlockHash = await getBlockHash(api, prevTermEndBlock);
+  const prevWGSalary = await getWorkingGroupSalary(api, prevTermEndBlockHash, new Date(electedCouncils[currentTerm - 1].electedAtTime), new Date(electedCouncils[currentTerm - 1].endedAtTime), prevTermStartBlock, prevTermEndBlock);
+  const prevStartElectedIssuance = toJoy(await getTotalSupply(api, prevTermStartBlockHash));
+  const prevEndElectedIssuance = toJoy(await getTotalSupply(api, prevTermEndBlockHash));
+  const prevTermissuanceChange = prevEndElectedIssuance - prevStartElectedIssuance;
+
   Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
-      let wgData = {
-        startWGBudget: wgBudget[_group as GroupIdName].startBudget,
-        endWGBudget: wgBudget[_group as GroupIdName].endBudget,
-        discretionarySpending: daoSpending[_group as GroupIdName],
-        spendingProposal: 0,
+      let wgDataOfJoy = {
+        startWGBudget: currentWGBudget[_group as GroupIdName].startBudget,
+        endWGBudget: currentWGBudget[_group as GroupIdName].endBudget,
         refillBudget: 0,
-        workerRewards: wgSalary[_group as GroupIdName].workerSalary,
-        leadRewards: wgSalary[_group as GroupIdName].leadSalary,
+        actualSpending: currentWGSalary[_group as GroupIdName].workerSalary + currentWGSalary[_group as GroupIdName].leadSalary,
+        workerRewards: currentWGSalary[_group as GroupIdName].workerSalary,
+        leadRewards: currentWGSalary[_group as GroupIdName].leadSalary,
       }
-      if (wgSpendingProposal[_group as GroupIdName]) {
-        wgData.spendingProposal = wgSpendingProposal[_group as GroupIdName];
+      if (currentWGRefillProposal[_group as GroupIdName]) {
+        wgDataOfJoy.refillBudget = currentWGRefillProposal[_group as GroupIdName];
       }
-      if (wgRefillProposal[_group as GroupIdName]) {
-        wgData.refillBudget = wgRefillProposal[_group as GroupIdName];
+      let wgDataOfUsd = {
+        startWGBudget: wgDataOfJoy.startWGBudget * Number(EMA30.curEMA),
+        endWGBudget: wgDataOfJoy.endWGBudget * Number(EMA30.curEMA),
+        actualSpending: wgDataOfJoy.actualSpending * Number(EMA30.curEMA),
+        refillBudget: wgDataOfJoy.refillBudget * Number(EMA30.curEMA),
+        workerRewards: wgDataOfJoy.workerRewards * Number(EMA30.curEMA),
+        leadRewards: wgDataOfJoy.leadRewards * Number(EMA30.curEMA),
       }
-      wgBudgets[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgData;
+      const prevSpendingOfJoy = prevWGSalary[_group as GroupIdName].leadSalary + prevWGSalary[_group as GroupIdName].workerSalary;
+      let wgSpending_tmp = {
+        prevSpendingOfJoy: prevSpendingOfJoy,
+        prevSpendingOfUsd: Math.ceil(prevSpendingOfJoy * Number(EMA30.curEMA)),
+        currentSpendingOfJoy: wgDataOfJoy.actualSpending,
+        currentSpendingOfUsd: Math.ceil(wgDataOfJoy.actualSpending * Number(EMA30.curEMA))
+      }
+      wgSpending[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgSpending_tmp;
+      wgBudgetsOfUsd[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgDataOfUsd;
+      wgBudgetsOfJoy[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgDataOfJoy;
     });
-  // Working Group Opening Application FilledPosition
-  const wgOpening = await getWGOpening(startBlockTimestamp, endBlockTimestamp);
-  const wgApplication = await getWGApplication(startBlockTimestamp, endBlockTimestamp);
-  const wgFilledPosition = await getWGFilledPosition(startBlockTimestamp, endBlockTimestamp);
+
+  // Overall Budget
+
+  const currentOverallBudget = {} as {
+    [key in OverallBudgetKeys]: {
+      spendingOfJoy: number;
+      spendingOfUsd: number;
+    }
+  }
+
+  const prevOverallBudget = {} as {
+    [key in OverallBudgetKeys]: {
+      spendingOfJoy: number;
+      spendingOfUsd: number;
+    }
+  }
+
+  const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
+  const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
+  currentOverallBudget["councilReward"] = {
+    spendingOfJoy: councilRewardBudget,
+    spendingOfUsd: Math.ceil(councilRewardBudget * Number(EMA30.curEMA))
+  }
+  const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
+  currentOverallBudget["fundingProposal"] = {
+    spendingOfJoy: fundingProposalBudget,
+    spendingOfUsd: Math.ceil(fundingProposalBudget * Number(EMA30.curEMA))
+  }
+  const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
+  currentOverallBudget["creatorPayoutReward"] = {
+    spendingOfJoy: creatorPayoutRewardBudget,
+    spendingOfUsd: Math.ceil(creatorPayoutRewardBudget * Number(EMA30.curEMA))
+  }
+  const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
+  currentOverallBudget["validatorReward"] = {
+    spendingOfJoy: validatorRewardsBudget,
+    spendingOfUsd: Math.ceil(validatorRewardsBudget * Number(EMA30.curEMA))
+  }
+  const totalWgSpending = Object.keys(wgSpending)
+    .reduce((a, b) => a + wgSpending[b as GroupShortIDName].currentSpendingOfJoy, 0);
+  currentOverallBudget["wgSpending"] = {
+    spendingOfJoy: totalWgSpending,
+    spendingOfUsd: Math.ceil(totalWgSpending * Number(EMA30.curEMA))
+  }
+  const grandTotal = councilRewardBudget + totalWgSpending + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget
+  currentOverallBudget["grandTotal"] = {
+    spendingOfJoy: grandTotal,
+    spendingOfUsd: Math.ceil(grandTotal * Number(EMA30.curEMA))
+  }
+  const fees = grandTotal - issuanceChange;
+  currentOverallBudget["fees"] = {
+    spendingOfJoy: fees,
+    spendingOfUsd: Math.ceil(fees * Number(EMA30.curEMA))
+  }
+
+  const prevCouncilReward = await getCouncilReward(prevTermStartBlock, prevTermEndBlock);
+  const prevCouncilRewardBudget = prevCouncilReward.reduce((a, b) => a + b.amount, 0);
+  prevOverallBudget["councilReward"] = {
+    spendingOfJoy: prevCouncilRewardBudget,
+    spendingOfUsd: Math.ceil(prevCouncilRewardBudget * Number(EMA30.prevEMA))
+  }
+  const prevFundingProposalBudget = await getFundingProposal(prevTermStartBlock, prevTermEndBlock);
+  prevOverallBudget["fundingProposal"] = {
+    spendingOfJoy: prevFundingProposalBudget,
+    spendingOfUsd: Math.ceil(prevFundingProposalBudget * Number(EMA30.prevEMA))
+  }
+  const prevCreatorPayoutRewardBudget = await getCreatorPayoutReward(prevTermStartBlock, prevTermEndBlock);
+  prevOverallBudget["creatorPayoutReward"] = {
+    spendingOfJoy: prevCreatorPayoutRewardBudget,
+    spendingOfUsd: Math.ceil(prevCreatorPayoutRewardBudget * Number(EMA30.prevEMA))
+  }
+  const prevValidatorRewardsBudget = await getValidatorReward(api, prevTermStartBlockHash, prevTermEndBlockHash);
+  prevOverallBudget["validatorReward"] = {
+    spendingOfJoy: prevValidatorRewardsBudget,
+    spendingOfUsd: Math.ceil(prevValidatorRewardsBudget * Number(EMA30.prevEMA))
+  }
+  const prevTotalWgSpending = Object.keys(wgSpending)
+    .reduce((a, b) => a + wgSpending[b as GroupShortIDName].prevSpendingOfJoy, 0);
+  prevOverallBudget["wgSpending"] = {
+    spendingOfJoy: prevTotalWgSpending,
+    spendingOfUsd: Math.ceil(prevTotalWgSpending * Number(EMA30.prevEMA))
+  }
+  const prevGrandTotal = prevCouncilRewardBudget + prevTotalWgSpending + prevFundingProposalBudget + prevCreatorPayoutRewardBudget + prevValidatorRewardsBudget
+  prevOverallBudget["grandTotal"] = {
+    spendingOfJoy: prevGrandTotal,
+    spendingOfUsd: Math.ceil(prevGrandTotal * Number(EMA30.prevEMA))
+  }
+  const prevFees = prevGrandTotal - prevTermissuanceChange;
+  prevOverallBudget["fees"] = {
+    spendingOfJoy: prevFees,
+    spendingOfUsd: Math.ceil(prevFees * Number(EMA30.prevEMA))
+  }
+
 
   return {
-    nonEmptyChannel,
-    videos,
-    mediaStorage: storageFlag ? mediaStorage : undefined,
-    councilBudget,
+    general,
+    composition,
+    EMA30,
+    projectInflations,
     inflation,
-    wgBudgets,
-    forum,
-    proposal,
-    membership,
-    wgOpening,
-    wgApplication,
-    wgFilledPosition
+    // nonEmptyChannel,
+    // videos,
+    mediaStorage: storageFlag ? mediaStorage : undefined,
+    wgBudgetsOfJoy,
+    wgBudgetsOfUsd,
+    wgSpending,
+    wgWorkerStatus,
+    currentOverallBudget,
+    prevOverallBudget,
+    // forum,
+    // proposal,
+    // membership,
   };
 }

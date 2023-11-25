@@ -20,13 +20,12 @@ import {
 } from "@/api";
 import { useRpc } from "@/hooks";
 import { DailyData } from "@/hooks/types";
-
-function JoyChart({ data, title }: { data: DailyData[]; title: string }) {
+JoyChart = (data: DailyData[], title: string, id: string) => {
   if (data.length === 0) return <></>;
   return (
     <div className="p-2" id="graph">
       <h3>{title}</h3>
-      <BarChart width={730} height={250} data={data}>
+      <BarChart id={id} width={730} height={250} data={data}>
         <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
         <XAxis
           dataKey="date"
@@ -137,9 +136,6 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
 
   return (
     <div>
-      <div className="d-flex">
-
-      </div>
       <button
         className="btn mr-0 my-5 mx-4"
         onClick={generate}
@@ -147,14 +143,14 @@ export default function Charts({ start, end, storageStatus }: { start: number; e
       >
         {loading ? "Generating..." : "Generate Chart"}
       </button>
-      {/* <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
+      <button className="btn mr-0 my-5 mx-4" onClick={generateImg}>
         Generat Image
-      </button> */}
-      <JoyChart data={videoData} title="New Videos" />
-      <JoyChart data={videoNftData} title="New NFT Minted" />
-      <JoyChart data={channelData} title="Non-empty channels" />
-      <JoyChart data={membershipData} title="Membership" />
-      {storageStatus ? (<JoyChart data={storageData} title="New Media Uploads (GB)" />
+      </button>
+      <JoyChart data={videoData} title="New Videos" id="videosChart" />
+      <JoyChart data={videoNftData} title="New NFT Minted" id="videoNftChart" />
+      <JoyChart data={channelData} title="Non-empty channels" id="nonEmptyChannelChart" />
+      <JoyChart data={membershipData} title="Membership" id="membershipChart" />
+      {storageStatus ? (<JoyChart data={storageData} title="New Media Uploads (GB)" id="mediaStorageChart" />
       ) : null
       }
     </div>

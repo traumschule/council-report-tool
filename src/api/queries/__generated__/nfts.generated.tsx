@@ -10,6 +10,15 @@ export type GetNftIssuedCountQueryVariables = Types.Exact<{
 
 export type GetNftIssuedCountQuery = { __typename: 'Query', nftIssuedEventsConnection: { __typename: 'NftIssuedEventConnection', totalCount: number } };
 
+export type GetNftIssuedQueryVariables = Types.Exact<{
+  where?: Types.InputMaybe<Types.NftIssuedEventWhereInput>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+}>;
+
+
+export type GetNftIssuedQuery = { __typename: 'Query', nftIssuedEvents: Array<{ __typename: 'NftIssuedEvent', id: string, createdAt: any }> };
+
 export type GetNftSaleCountQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.NftBoughtEventWhereInput>;
 }>;
@@ -98,6 +107,49 @@ export function useGetNftIssuedCountLazyQuery(baseOptions?: Apollo.LazyQueryHook
 export type GetNftIssuedCountQueryHookResult = ReturnType<typeof useGetNftIssuedCountQuery>;
 export type GetNftIssuedCountLazyQueryHookResult = ReturnType<typeof useGetNftIssuedCountLazyQuery>;
 export type GetNftIssuedCountQueryResult = Apollo.QueryResult<GetNftIssuedCountQuery, GetNftIssuedCountQueryVariables>;
+export const GetNftIssuedDocument = gql`
+    query GetNftIssued($where: NftIssuedEventWhereInput, $limit: Int, $offset: Int) {
+  nftIssuedEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    id
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetNftIssuedQuery__
+ *
+ * To run a query within a React component, call `useGetNftIssuedQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetNftIssuedQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetNftIssuedQuery({
+ *   variables: {
+ *      where: // value for 'where'
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useGetNftIssuedQuery(baseOptions?: Apollo.QueryHookOptions<GetNftIssuedQuery, GetNftIssuedQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetNftIssuedQuery, GetNftIssuedQueryVariables>(GetNftIssuedDocument, options);
+      }
+export function useGetNftIssuedLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetNftIssuedQuery, GetNftIssuedQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetNftIssuedQuery, GetNftIssuedQueryVariables>(GetNftIssuedDocument, options);
+        }
+export type GetNftIssuedQueryHookResult = ReturnType<typeof useGetNftIssuedQuery>;
+export type GetNftIssuedLazyQueryHookResult = ReturnType<typeof useGetNftIssuedLazyQuery>;
+export type GetNftIssuedQueryResult = Apollo.QueryResult<GetNftIssuedQuery, GetNftIssuedQueryVariables>;
 export const GetNftSaleCountDocument = gql`
     query GetNftSaleCount($where: NftBoughtEventWhereInput) {
   nftBoughtEventsConnection(where: $where) {

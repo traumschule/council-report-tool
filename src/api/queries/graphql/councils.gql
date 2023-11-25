@@ -4,7 +4,7 @@ query GetElectedCouncils(
   $offset: Int
   $limit: Int
 ) {
-  electedCouncils(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
+  electedCouncils(where: $where, orderBy: createdAt_ASC, offset: $offset, limit: $limit) {
     ...ElectedCouncilFields
     __typename
   }
@@ -68,10 +68,10 @@ query GetCouncilReFillTotalCount(
 fragment ElectedCouncilFields on ElectedCouncil {
   id
   electedAtBlock
-  endedAtBlock
   electedAtTime
-  endedAtTime
   electedAtNetwork
+  endedAtBlock
+  endedAtTime
   endedAtNetwork
   councilElections {
     cycleId

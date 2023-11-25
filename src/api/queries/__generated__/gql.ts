@@ -37394,7 +37394,7 @@ export type GetElectedCouncilsQueryVariables = Exact<{
 }>;
 
 
-export type GetElectedCouncilsQuery = { __typename: 'Query', electedCouncils: Array<{ __typename: 'ElectedCouncil', id: string, electedAtBlock: number, endedAtBlock?: number | null, electedAtTime: any, endedAtTime?: any | null, electedAtNetwork: Network, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> }> };
+export type GetElectedCouncilsQuery = { __typename: 'Query', electedCouncils: Array<{ __typename: 'ElectedCouncil', id: string, electedAtBlock: number, electedAtTime: any, electedAtNetwork: Network, endedAtBlock?: number | null, endedAtTime?: any | null, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> }> };
 
 export type GetCouncilRewardQueryVariables = Exact<{
   where?: InputMaybe<RewardPaymentEventWhereInput>;
@@ -37428,21 +37428,16 @@ export type GetCouncilReFillTotalCountQueryVariables = Exact<{
 
 export type GetCouncilReFillTotalCountQuery = { __typename: 'Query', budgetRefillEventsConnection: { __typename: 'BudgetRefillEventConnection', totalCount: number } };
 
-export type ElectedCouncilFieldsFragment = { __typename: 'ElectedCouncil', id: string, electedAtBlock: number, endedAtBlock?: number | null, electedAtTime: any, endedAtTime?: any | null, electedAtNetwork: Network, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> };
+export type ElectedCouncilFieldsFragment = { __typename: 'ElectedCouncil', id: string, electedAtBlock: number, electedAtTime: any, electedAtNetwork: Network, endedAtBlock?: number | null, endedAtTime?: any | null, endedAtNetwork?: Network | null, councilElections: Array<{ __typename: 'ElectionRound', cycleId: number }>, councilMembers: Array<{ __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } }> };
 
 export type CouncilMemberFieldsFragment = { __typename: 'CouncilMember', id: string, unpaidReward: string, stake: string, member: { __typename: 'Membership', id: string, rootAccount: string, controllerAccount: string, boundAccounts: Array<string>, handle: string, isVerified: boolean, isFoundingMember: boolean, isCouncilMember: boolean, inviteCount: number, createdAt: any, councilMembers: Array<{ __typename: 'CouncilMember' }>, metadata: { __typename: 'MemberMetadata', name?: string | null, about?: string | null, avatar?: { __typename: 'AvatarObject' } | { __typename: 'AvatarUri', avatarUri: string } | null }, roles: Array<{ __typename: 'Worker', id: string, createdAt: any, isLead: boolean, group: { __typename: 'WorkingGroup', name: string } }>, stakingaccountaddedeventmember?: Array<{ __typename: 'StakingAccountAddedEvent', createdAt: any, inBlock: number, network: Network, account: string }> | null } };
 
-export type GetElectionsQueryVariables = Exact<{
-  where?: InputMaybe<ElectionRoundWhereInput>;
-  orderBy?: InputMaybe<Array<ElectionRoundOrderByInput> | ElectionRoundOrderByInput>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+export type GetElectionRoundWithUniqueIdQueryVariables = Exact<{
+  where: ElectionRoundWhereUniqueInput;
 }>;
 
 
-export type GetElectionsQuery = { __typename: 'Query', electionRounds: Array<{ __typename: 'ElectionRound', id: string, cycleId: number, endedAtBlock?: number | null, endedAtTime?: any | null, endedAtNetwork?: Network | null, candidates: Array<{ __typename: 'Candidate', stake: string }>, castVotes: Array<{ __typename: 'CastVote', voteForId?: string | null }> }> };
-
-export type ElectionRoundFieldsFragment = { __typename: 'ElectionRound', id: string, cycleId: number, endedAtBlock?: number | null, endedAtTime?: any | null, endedAtNetwork?: Network | null, candidates: Array<{ __typename: 'Candidate', stake: string }>, castVotes: Array<{ __typename: 'CastVote', voteForId?: string | null }> };
+export type GetElectionRoundWithUniqueIdQuery = { __typename: 'Query', electionRoundByUniqueInput?: { __typename: 'ElectionRound', id: string, cycleId: number, castVotes: Array<{ __typename: 'CastVote', stake: string, stakeLocked: boolean }>, candidates: Array<{ __typename: 'Candidate', votePower: string, member: { __typename: 'Membership', handle: string } }> } | null };
 
 export type GetForumPostsCountQueryVariables = Exact<{
   where?: InputMaybe<ForumPostWhereInput>;
@@ -37523,6 +37518,15 @@ export type GetNftIssuedCountQueryVariables = Exact<{
 
 
 export type GetNftIssuedCountQuery = { __typename: 'Query', nftIssuedEventsConnection: { __typename: 'NftIssuedEventConnection', totalCount: number } };
+
+export type GetNftIssuedQueryVariables = Exact<{
+  where?: InputMaybe<NftIssuedEventWhereInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetNftIssuedQuery = { __typename: 'Query', nftIssuedEvents: Array<{ __typename: 'NftIssuedEvent', id: string, createdAt: any }> };
 
 export type GetNftSaleCountQueryVariables = Exact<{
   where?: InputMaybe<NftBoughtEventWhereInput>;
@@ -38167,10 +38171,10 @@ export const ElectedCouncilFieldsFragmentDoc = gql`
     fragment ElectedCouncilFields on ElectedCouncil {
   id
   electedAtBlock
-  endedAtBlock
   electedAtTime
-  endedAtTime
   electedAtNetwork
+  endedAtBlock
+  endedAtTime
   endedAtNetwork
   councilElections {
     cycleId
@@ -38180,21 +38184,6 @@ export const ElectedCouncilFieldsFragmentDoc = gql`
   }
 }
     ${CouncilMemberFieldsFragmentDoc}`;
-export const ElectionRoundFieldsFragmentDoc = gql`
-    fragment ElectionRoundFields on ElectionRound {
-  id
-  cycleId
-  endedAtBlock
-  endedAtTime
-  endedAtNetwork
-  candidates {
-    stake
-  }
-  castVotes {
-    voteForId
-  }
-}
-    `;
 export const NftBoughtEventFieldFragmentDoc = gql`
     fragment NftBoughtEventField on NftBoughtEvent {
   videoId
@@ -38599,7 +38588,7 @@ export const GetElectedCouncilsDocument = gql`
     query GetElectedCouncils($where: ElectedCouncilWhereInput, $orderBy: [ElectedCouncilOrderByInput!], $offset: Int, $limit: Int) {
   electedCouncils(
     where: $where
-    orderBy: $orderBy
+    orderBy: createdAt_ASC
     offset: $offset
     limit: $limit
   ) {
@@ -38651,14 +38640,24 @@ export const GetCouncilReFillTotalCountDocument = gql`
   }
 }
     `;
-export const GetElectionsDocument = gql`
-    query GetElections($where: ElectionRoundWhereInput, $orderBy: [ElectionRoundOrderByInput!], $offset: Int, $limit: Int) {
-  electionRounds(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
-    ...ElectionRoundFields
-    __typename
+export const GetElectionRoundWithUniqueIdDocument = gql`
+    query GetElectionRoundWithUniqueID($where: ElectionRoundWhereUniqueInput!) {
+  electionRoundByUniqueInput(where: $where) {
+    id
+    cycleId
+    castVotes {
+      stake
+      stakeLocked
+    }
+    candidates {
+      votePower
+      member {
+        handle
+      }
+    }
   }
 }
-    ${ElectionRoundFieldsFragmentDoc}`;
+    `;
 export const GetForumPostsCountDocument = gql`
     query GetForumPostsCount($where: ForumPostWhereInput) {
   forumPostsConnection(first: 0, where: $where) {
@@ -38755,6 +38754,19 @@ export const GetNftIssuedCountDocument = gql`
     query GetNftIssuedCount($where: NftIssuedEventWhereInput) {
   nftIssuedEventsConnection(where: $where) {
     totalCount
+  }
+}
+    `;
+export const GetNftIssuedDocument = gql`
+    query GetNftIssued($where: NftIssuedEventWhereInput, $limit: Int, $offset: Int) {
+  nftIssuedEvents(
+    where: $where
+    limit: $limit
+    offset: $offset
+    orderBy: createdAt_ASC
+  ) {
+    id
+    createdAt
   }
 }
     `;
@@ -39353,8 +39365,8 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     GetCouncilReFillTotalCount(variables?: GetCouncilReFillTotalCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetCouncilReFillTotalCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetCouncilReFillTotalCountQuery>(GetCouncilReFillTotalCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetCouncilReFillTotalCount', 'query');
     },
-    GetElections(variables?: GetElectionsQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetElectionsQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<GetElectionsQuery>(GetElectionsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetElections', 'query');
+    GetElectionRoundWithUniqueID(variables: GetElectionRoundWithUniqueIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetElectionRoundWithUniqueIdQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetElectionRoundWithUniqueIdQuery>(GetElectionRoundWithUniqueIdDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetElectionRoundWithUniqueID', 'query');
     },
     GetForumPostsCount(variables?: GetForumPostsCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetForumPostsCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetForumPostsCountQuery>(GetForumPostsCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetForumPostsCount', 'query');
@@ -39385,6 +39397,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     GetNftIssuedCount(variables?: GetNftIssuedCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftIssuedCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetNftIssuedCountQuery>(GetNftIssuedCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNftIssuedCount', 'query');
+    },
+    GetNftIssued(variables?: GetNftIssuedQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftIssuedQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<GetNftIssuedQuery>(GetNftIssuedDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNftIssued', 'query');
     },
     GetNftSaleCount(variables?: GetNftSaleCountQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<GetNftSaleCountQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<GetNftSaleCountQuery>(GetNftSaleCountDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'GetNftSaleCount', 'query');

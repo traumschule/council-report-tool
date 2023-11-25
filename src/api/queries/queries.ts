@@ -64,7 +64,7 @@ export const getStorageChartData = async (start: Date, end: Date) => {
   return data;
 };
 
-export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
+export const getStorageStatus = async (end: Date, start?: Date) => {
   const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
   const defalultOffset = 5000;
   const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
@@ -72,10 +72,13 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
       createdAt_lte: end
     }
   })
+  const data: Array<DailyData> = [];
+  let curDate = "";
   const { totalCount } = storageDataObjectsConnection;
   let loop = Math.ceil(totalCount / defalultOffset);
   let startStorage = 1;
   let endStorage = 1;
+  let storageSize = 0;
   for (let i = 0; i < loop; i++) {
     const { storageDataObjects } = await GetStorageDataObjects({
       where: {
@@ -87,17 +90,37 @@ export const getStorageStatusByBlock = async (end: Date, start?: Date) => {
     storageDataObjects.map((storage) => {
       if (start) {
         let storageCreateAt = new Date(storage.createdAt);
-
-        if (storageCreateAt <= start) {
+        if (storageCreateAt < start) {
           startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
+        } else {
+          if (curDate == "")
+            curDate = moment(storage.createdAt).format('YYYY-MM-DD');
+          if (moment(storage.createdAt).format('YYYY-MM-DD') == curDate) {
+            storageSize += parseInt(storage.size) / 1024 / 1024 / 1024;
+          } else {
+            data.push({
+              date: new Date(curDate),
+              count: storageSize
+            });
+            storageSize = parseInt(storage.size) / 1024 / 1024 / 1024;
+            curDate = moment(storage.createdAt).format('YYYY-MM-DD');
+          }
         }
+
       }
       endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
     })
   }
+  if (start) {
+    data.push({
+      date: new Date(curDate),
+      count: storageSize
+    });
+  }
   return {
     startStorage: decimalAdjust(startStorage),
-    endStorage: decimalAdjust(endStorage)
+    endStorage: decimalAdjust(endStorage),
+    chartData: data
   }
 }
 
@@ -108,6 +131,10 @@ export const getChannelStatus = async (endBlockNumber: number, startDate?: Date)
   const defaultLimit = 5000;
   let startCount: string[] = [];
   let endCount: string[] = [];
+  let channelCount: number = 0;
+  let curDate = moment(startDate).format('YYYY-MM-DD');
+  const totalChannels: Array<ChannelData> = [];
+  const channelChart: Array<DailyData> = [];
   const { videosConnection: { totalCount: videoCount } } = await GetVideoCount({
     where: {
       createdInBlock_lte: endBlockNumber
@@ -123,30 +150,60 @@ export const getChannelStatus = async (endBlockNumber: number, startDate?: Date)
       offset: defaultLimit * i
     });
     videos.map((video) => {
-      let flag = endCount.filter((a) => {
+      let flag = endCount.find((a) => {
         return a == video.channelId;
       })
-      if (flag.length == 0) {
+      if (!flag) {
         if (startDate) {
           let channelCreatedAt = new Date(video.channel.createdAt);
           if (channelCreatedAt <= startDate) {
             startCount.push(video.channelId);
           }
         }
+        totalChannels.push(video.channel);
         endCount.push(video.channelId);
       }
     })
   }
+  if (startDate) {
+    totalChannels.sort((a1, a2) => {
+      if (a1.createdAt <= a2.createdAt) {
+        return -1;
+      } else {
+        return 1;
+      }
+    })
+      .filter((a) => {
+        return new Date(a.createdAt) > startDate;
+      })
+      .map((a) => {
+        if (moment(a.createdAt).format('YYYY-MM-DD') == curDate) {
+          channelCount += 1;
+        } else {
+          channelChart.push({
+            count: channelCount,
+            date: new Date(curDate)
+          });
+          channelCount = 1;
+          curDate = moment(a.createdAt).format('YYYY-MM-DD');
+        };
+      });
+    channelChart.push({
+      count: channelCount,
+      date: new Date(curDate)
+    });
+  }
 
   return {
     startCount: startCount.length,
-    endCount: endCount.length
+    endCount: endCount.length,
+    chartData: channelChart
   };
 };
 
 export const getChannelChartData = async (endBlock: number, startDate: Date) => {
   const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 1000;
+  const defaultLimit = 5000;
   let channelCount: number = 0;
   const totalChannels: Array<ChannelData> = [];
   const channelChart: Array<DailyData> = [];
@@ -206,12 +263,15 @@ export const getChannelChartData = async (endBlock: number, startDate: Date) => 
 // VideoNFT
 
 export const getVideoNftStatus = async (start: Date, end: Date) => {
-  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions, GetAuctionsTotalCount } =
+  const { GetNftIssuedCount, GetNftSales, GetNftSaleCount, GetAuctions, GetAuctionsTotalCount, GetNftIssued } =
     getSdk(client);
-  const defaultLimit = 100;
+  const defaultLimit = 1000;
+  const chartData: Array<DailyData> = [];
+  let curDate = moment(start).format('YYYY-MM-DD');
   let loop = 0;
   let totalVolume = BN_ZERO;
   let auctionVolume = BN_ZERO;
+  let count = 0;
   const {
     nftIssuedEventsConnection: { totalCount: startCount },
   } = await GetNftIssuedCount({
@@ -223,8 +283,35 @@ export const getVideoNftStatus = async (start: Date, end: Date) => {
     where: { createdAt_lte: end },
   });
   const growthQty = endCount - startCount;
-  const growthPct = (growthQty / startCount) * 100;
+  const growthPct = decimalAdjust((growthQty / startCount) * 100);
+  loop = Math.ceil(growthQty / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { nftIssuedEvents } = await GetNftIssued({
+      where: {
+        createdAt_gte: start,
+        createdAt_lte: end
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    nftIssuedEvents.map((n) => {
+      if (moment(n.createdAt).format('YYYY-MM-DD') == curDate) {
+        count++;
+      } else {
+        chartData.push({
+          date: new Date(curDate),
+          count
+        });
+        count = 1;
+        curDate = moment(n.createdAt).format('YYYY-MM-DD');
+      }
 
+    });
+  }
+  chartData.push({
+    date: new Date(curDate),
+    count
+  });
   const {
     nftBoughtEventsConnection: { totalCount: boughtEventTotalCount },
   } = await GetNftSaleCount({
@@ -265,6 +352,7 @@ export const getVideoNftStatus = async (start: Date, end: Date) => {
     growthPct,
     soldVolume: toJoy(totalVolume),
     soldQty: boughtEventTotalCount,
+    chartData
   };
 };
 
@@ -305,11 +393,15 @@ export const getVideoNftChartData = async (start: Date, end: Date) => {
 // Videos
 
 export const getVideoStatus = async (start: number, end: number) => {
-  const { GetVideoCount } = getSdk(client);
+  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
+  const defaultLimit = 1000;
+  let curDate = "";
+  let count = 0;
+  const videoChart: Array<DailyData> = [];
   const {
     videosConnection: { totalCount: startCount },
   } = await GetVideoCount({
-    where: { createdInBlock_lte: start },
+    where: { createdInBlock_lt: start },
   });
   const {
     videosConnection: { totalCount: endCount },
@@ -317,12 +409,45 @@ export const getVideoStatus = async (start: number, end: number) => {
     where: { createdInBlock_lte: end },
   });
   const growthQty = endCount - startCount;
-  const growthPct = (growthQty / startCount) * 100;
+  const growthPct = decimalAdjust((growthQty / startCount) * 100);
+  let loop = Math.ceil(growthQty / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+    const { videos } = await GetNonEmptyChannel({
+      where: {
+        createdInBlock_gte: start,
+        createdInBlock_lte: end
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    if (curDate == "") {
+      curDate = moment(videos[0].createdAt).format('YYYY-MM-DD');
+    }
+    videos.map((video) => {
+      if (moment(video.createdAt).format('YYYY-MM-DD') == curDate)
+        count++;
+      else {
+        videoChart.push({
+          date: new Date(curDate),
+          count
+        });
+        count = 1;
+        curDate = moment(video.createdAt).format('YYYY-MM-DD');
+      }
+    });
+
+  }
+  videoChart.push({
+    date: new Date(curDate),
+    count
+  });
   return {
     startBlock: startCount,
     endBlock: endCount,
     growthQty,
     growthPct,
+    chartData: videoChart
+
   };
 };
 
@@ -469,24 +594,59 @@ export const getMembershipCount = async (date: Date) => {
 };
 
 export const getMembershipStatus = async (start: Date, end: Date) => {
-  const { GetMembersCount } = getSdk(client);
+  const { GetMembersCount, GetMembers } = getSdk(client);
+  const chartData: Array<DailyData> = [];
+  let curDate = "";
+  let count = 0;
   const {
     membershipsConnection: { totalCount: startCount },
   } = await GetMembersCount({
-    where: { createdAt_lte: start },
+    where: { createdAt_lt: start },
   });
+  const defaultLimit = 5000;
   const {
     membershipsConnection: { totalCount: endCount },
   } = await GetMembersCount({
     where: { createdAt_lte: end },
   });
   const growthQty = endCount - startCount;
-  const growthPct = (growthQty / startCount) * 100;
+  const growthPct = decimalAdjust((growthQty / startCount) * 100);
+  let loop = Math.ceil(growthQty / defaultLimit);
+  for (let i = 0; i < loop; i++) {
+
+    const { memberships } = await GetMembers({
+      where: {
+        createdAt_gte: start,
+        createdAt_lte: end
+      },
+      limit: defaultLimit,
+      offset: defaultLimit * i
+    });
+    if (curDate == "")
+      curDate = moment(memberships[0].createdAt).format('YYYY-MM-DD');
+    memberships.map((member) => {
+      if (moment(member.createdAt).format('YYYY-MM-DD') == curDate)
+        count++;
+      else {
+        chartData.push({
+          date: new Date(curDate),
+          count
+        });
+        count = 1;
+        curDate = moment(member.createdAt).format('YYYY-MM-DD');
+      }
+    });
+  }
+  chartData.push({
+    date: new Date(curDate),
+    count
+  })
   return {
     startBlock: startCount,
     endBlock: endCount,
     growthQty,
     growthPct,
+    chartData
   };
 };
 
@@ -498,7 +658,7 @@ export const getMembershipChartData = async (start: Date, end: Date) => {
   const chartData: Array<DailyData> = [];
   const { membershipsConnection: { totalCount } } = await GetMembersCount({
     where: {
-      createdAt_gt: start,
+      createdAt_gte: start,
       createdAt_lte: end
     }
   });
@@ -506,7 +666,7 @@ export const getMembershipChartData = async (start: Date, end: Date) => {
   for (let i = 0; i < loop; i++) {
     const { memberships } = await GetMembers({
       where: {
-        createdAt_gt: start,
+        createdAt_gte: start,
         createdAt_lte: end
       },
       limit: defaultLimit,
@@ -866,7 +1026,7 @@ export const getWGApplication = async (start: Date, end: Date) => {
   }
 }
 
-export const getWGFilledPosition = async (start: Date, end: Date) => {
+export const getWGFilledPosition = async (start: Date, end: Date, groupID: string) => {
   const {
     GetOpeningFilledEventsConnection,
     GetTerminatedWorkerEventsConnection,
@@ -875,19 +1035,37 @@ export const getWGFilledPosition = async (start: Date, end: Date) => {
   const {
     openingFilledEventsConnection: { totalCount: filledCount },
   } = await GetOpeningFilledEventsConnection({
-    where: { createdAt_gte: start, createdAt_lte: end },
+    where: {
+      createdAt_gte: start,
+      createdAt_lte: end,
+      group: {
+        id_eq: groupID
+      }
+    },
   });
 
   const {
     terminatedWorkerEventsConnection: { totalCount: terminatedCount },
   } = await GetTerminatedWorkerEventsConnection({
-    where: { createdAt_gte: start, createdAt_lte: end },
+    where: {
+      createdAt_gte: start,
+      createdAt_lte: end,
+      group: {
+        id_eq: groupID
+      }
+    },
   });
 
   const {
     workerExitedEventsConnection: { totalCount: leftCount },
   } = await GetWorkerExitedEventsConnection({
-    where: { createdAt_gte: start, createdAt_lte: end },
+    where: {
+      createdAt_gte: start,
+      createdAt_lte: end,
+      group: {
+        id_eq: groupID
+      }
+    },
   });
 
   return {
@@ -924,160 +1102,24 @@ export const getWGSpendingWithReceiverID = async (start: number, end: number, ac
   return spendingBudget
 }
 
-export const getCurrentWorkingGroups = async (): Promise<WorkingGroup[]> => {
-  const { GetWorkingGroups } = getSdk(client);
-  const { workingGroups } = await GetWorkingGroups();
-  return workingGroups.map(asWorkingGroup);
-};
-
-export const getWorkingGroupSpending = async (
-  start: Block & { hash: string },
-  end: Block & { hash: string }
-) => {
-  const workingGroups = await getCurrentWorkingGroups();
-  const { GetBudgetSpending, getFundingProposals } = getSdk(client);
-
-  // calculate working group budgets
-  const spending = {} as {
-    [key in WorkingGroup["id"]]: number;
-  };
-  for await (const workingGroup of workingGroups) {
-    const { budgetSpendingEvents } = await GetBudgetSpending({
-      where: {
-        group: { id_eq: workingGroup.id },
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const wgSpending = budgetSpendingEvents.reduce(
-      (total, { amount }) => total.add(new BN(amount)),
-      BN_ZERO
-    );
-
-    spending[workingGroup.id] = toJoy(wgSpending);
-  }
-
-  const leadSalary = {} as {
-    [key in WorkingGroup["id"]]: number | undefined;
-  };
-  for (const workingGroup of workingGroups) {
-    const { leader } = workingGroup;
-    if (!leader) {
-      continue;
-    }
-    let salary = BN_ZERO;
-    const rewards = leader.rewardPerBlock.mul(
-      new BN(end.number - start.number)
-    );
-    salary = salary.add(rewards);
-
-    const proposalPaidPromise = getFundingProposals({
-      where: {
-        account_in: leader.membership.boundAccounts,
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const directPaysPromise = GetBudgetSpending({
-      where: {
-        reciever_in: leader.membership.boundAccounts,
-        createdAt_gte: start.timestamp,
-        createdAt_lte: end.timestamp,
-      },
-    });
-    const [proposalPaid, directPays] = await Promise.all([
-      proposalPaidPromise,
-      directPaysPromise,
-    ]);
-
-    const paid = proposalPaid.requestFundedEvents
-      .map((e) => new BN(e.amount))
-      .reduce((a, b) => a.add(b), BN_ZERO);
-    salary = salary.add(paid);
-
-    const discretionarySpending = directPays.budgetSpendingEvents.reduce(
-      (total, { amount }) => total.add(new BN(amount)),
-      BN_ZERO
-    );
-    salary = salary.add(discretionarySpending);
-    leadSalary[workingGroup.id] = toJoy(salary);
-  }
-
-  const workersSalary = {} as {
-    [key in WorkingGroup["id"]]: number;
-  };
-  for await (const workingGroup of workingGroups) {
-    const salariesPromise = workingGroup.workers.map(async (worker) => {
-      let salary = BN_ZERO;
-      salary = salary.add(
-        worker.rewardPerBlock.mul(new BN(end.number - start.number))
-      );
-
-      const proposalPaidPromise = getFundingProposals({
-        where: {
-          account_in: worker.membership.boundAccounts,
-          createdAt_gte: start.timestamp,
-          createdAt_lte: end.timestamp,
-        },
-      });
-      const directPaysPromise = GetBudgetSpending({
-        where: {
-          reciever_in: worker.membership.boundAccounts,
-          createdAt_gte: start.timestamp,
-          createdAt_lte: end.timestamp,
-        },
-      });
-      const [proposalPaid, directPays] = await Promise.all([
-        proposalPaidPromise,
-        directPaysPromise,
-      ]);
-
-      const paid = proposalPaid.requestFundedEvents
-        .map((e) => new BN(e.amount))
-        .reduce((a, b) => a.add(b), BN_ZERO);
-      salary = salary.add(paid);
-
-      const discretionarySpending = directPays.budgetSpendingEvents.reduce(
-        (total, { amount }) => total.add(new BN(amount)),
-        BN_ZERO
-      );
-
-      salary = salary.add(discretionarySpending);
-      return salary;
-    });
-
-    const salaries = await Promise.all(salariesPromise);
-    const groupSalary = salaries.reduce((a, b) => a.add(b), BN_ZERO);
-    workersSalary[workingGroup.id] = toJoy(groupSalary);
-  }
-
-  return { discretionarySpending: spending, leadSalary, workersSalary };
-};
-
 // council
 
-
-export const getElectedCouncils = async (): Promise<ElectedCouncil[]> => {
+export const getElectedCouncils = async () => {
   const { GetElectedCouncils } = getSdk(client);
+  const { electedCouncils } = await GetElectedCouncils();
+  return electedCouncils;
+}
 
-  const councils = await GetElectedCouncils();
-
-  return councils.electedCouncils.map(asElectedCouncil);
+export const getElectionRoundWithUniqueID = async (uniqueID: string) => {
+  const { GetElectionRoundWithUniqueID } = getSdk(client);
+  const { electionRoundByUniqueInput: electionRound } = await GetElectionRoundWithUniqueID({
+    where: {
+      id: uniqueID
+    }
+  });
+  return electionRound;
 };
 
-export const getElectedCouncilById = async (
-  id: string
-): Promise<ElectedCouncil> => {
-  const { GetElectedCouncils } = getSdk(client);
-
-  const council = await GetElectedCouncils({ where: { id_eq: `${id}` } });
-
-  if (council.electedCouncils.length !== 1) {
-    throw new Error(`No council found with id ${id}`);
-  }
-
-  return asElectedCouncil(council.electedCouncils[0]);
-};
 
 
 
