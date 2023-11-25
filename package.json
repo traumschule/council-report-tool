@@ -19,6 +19,7 @@
     "@polkadot/api": "8.9.1",
     "@polkadot/util": "9.5.1",
     "@types/dom-to-image": "^2.6.7",
+    "axios": "^1.6.2",
     "bn.js": "^5.2.1",
     "dom-to-image": "^2.6.0",
     "graphql": "^16.8.0",
