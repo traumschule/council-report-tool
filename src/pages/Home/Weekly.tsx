@@ -152,7 +152,7 @@ export default function Weekly() {
     }
   }
 
-  const exportWeeklyReport = () => {
+  const exportWeeklyReport = async () => {
     if (fileName == "")
       return;
     if (storageFlag)
@@ -160,7 +160,7 @@ export default function Weekly() {
     else
       weeklyReport = weeklyReportTempleteWithoutMediaStatus;
     writeWeeklyReport(report2, "");
-    exportImage();
+    await exportImage();
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
     element.setAttribute('download', fileName);
