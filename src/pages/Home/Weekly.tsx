@@ -282,12 +282,6 @@ export default function Weekly() {
         >
           Export Report
         </button>
-        <button
-          className="btn mr-0 my-5 mx-4"
-          onClick={exportImage}
-        >
-          Export Image
-        </button>
       </div>
 
       <ReactJson src={report2} theme="monokai" collapsed />
