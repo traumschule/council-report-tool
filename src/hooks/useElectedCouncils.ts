@@ -2,10 +2,9 @@ import { ElectedCouncilOrderByInput, GetElectedCouncilsQueryVariables, useGetEle
 import { asElectedCouncil } from '@/types';
 
 export const useElectedCouncils = ({
-  orderBy = ElectedCouncilOrderByInput.CreatedAtDesc,
   ...rest
 }: GetElectedCouncilsQueryVariables) => {
-  const { data, error, loading } = useGetElectedCouncilsQuery({ variables: { orderBy, ...rest } });
+  const { data, error, loading } = useGetElectedCouncilsQuery({ variables: { ...rest } });
 
   return { error, loading, data: data?.electedCouncils.map(asElectedCouncil) };
 };
