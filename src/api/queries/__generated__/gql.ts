@@ -37388,6 +37388,7 @@ export type StorageDataObjectFieldsFragment = { __typename: 'StorageDataObject',
 
 export type GetElectedCouncilsQueryVariables = Exact<{
   where?: InputMaybe<ElectedCouncilWhereInput>;
+  orderBy?: InputMaybe<Array<ElectedCouncilOrderByInput> | ElectedCouncilOrderByInput>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
@@ -38584,10 +38585,10 @@ export const GetCreatorPayoutRewardTotalCountDocument = gql`
 }
     `;
 export const GetElectedCouncilsDocument = gql`
-    query GetElectedCouncils($where: ElectedCouncilWhereInput, $offset: Int, $limit: Int) {
+    query GetElectedCouncils($where: ElectedCouncilWhereInput, $orderBy: [ElectedCouncilOrderByInput!], $offset: Int, $limit: Int) {
   electedCouncils(
     where: $where
-    orderBy: createdAt_ASC
+    orderBy: $orderBy
     offset: $offset
     limit: $limit
   ) {

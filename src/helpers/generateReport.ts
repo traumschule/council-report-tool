@@ -202,7 +202,7 @@ export async function generateReport2(
   const circulatingSupply = await getOfficialCirculatingSupply();
   const supply = {
     totalSupply,
-    inflationChanged,
+    inflationChanged: decimal3DAdjust(inflationChanged),
     circulatingSupply,
     mintedToken: issuanceChange,
     burnedToken: grandTotal - issuanceChange,

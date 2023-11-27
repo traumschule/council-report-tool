@@ -1,9 +1,10 @@
 query GetElectedCouncils(
   $where: ElectedCouncilWhereInput
+  $orderBy: [ElectedCouncilOrderByInput!]
   $offset: Int
   $limit: Int
 ) {
-  electedCouncils(where: $where, orderBy: createdAt_ASC, offset: $offset, limit: $limit) {
+  electedCouncils(where: $where, orderBy: $orderBy, offset: $offset, limit: $limit) {
     ...ElectedCouncilFields
     __typename
   }

@@ -6,6 +6,7 @@ import * as Apollo from '@apollo/client';
 const defaultOptions = {} as const;
 export type GetElectedCouncilsQueryVariables = Types.Exact<{
   where?: Types.InputMaybe<Types.ElectedCouncilWhereInput>;
+  orderBy?: Types.InputMaybe<Array<Types.ElectedCouncilOrderByInput> | Types.ElectedCouncilOrderByInput>;
   offset?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
@@ -80,10 +81,10 @@ export const ElectedCouncilFieldsFragmentDoc = gql`
 }
     ${CouncilMemberFieldsFragmentDoc}`;
 export const GetElectedCouncilsDocument = gql`
-    query GetElectedCouncils($where: ElectedCouncilWhereInput, $offset: Int, $limit: Int) {
+    query GetElectedCouncils($where: ElectedCouncilWhereInput, $orderBy: [ElectedCouncilOrderByInput!], $offset: Int, $limit: Int) {
   electedCouncils(
     where: $where
-    orderBy: createdAt_ASC
+    orderBy: $orderBy
     offset: $offset
     limit: $limit
   ) {
@@ -106,6 +107,7 @@ export const GetElectedCouncilsDocument = gql`
  * const { data, loading, error } = useGetElectedCouncilsQuery({
  *   variables: {
  *      where: // value for 'where'
+ *      orderBy: // value for 'orderBy'
  *      offset: // value for 'offset'
  *      limit: // value for 'limit'
  *   },
