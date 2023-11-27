@@ -202,7 +202,7 @@ export default function Weekly() {
         console.log(imgLink);
         if (imgLink != "") {
           const pattern = "_graph_" + _type;
-          weeklyReport = weeklyReport.replace(pattern, imgLink);
+          weeklyReport = weeklyReport.replaceAll(pattern, imgLink);
         }
         // DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
         //   const imgLink = await uploadImage(imgUrl.split(',')[1]);
