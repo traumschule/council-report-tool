@@ -192,7 +192,6 @@ export default function Weekly() {
         let options = { quality: 1 };
         const imgData = await DomToImage.toPng(node as Node, options);
         const imgLink = await uploadImage(imgData.split(',')[1]);
-        console.log(imgLink);
         if (imgLink != "") {
           const pattern = "_graph_" + _type;
           weeklyReport = weeklyReport.replaceAll(pattern, imgLink);
