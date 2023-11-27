@@ -162,12 +162,12 @@ export default function Weekly() {
     writeWeeklyReport(report2, "");
     await exportImage();
     var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
-    element.setAttribute('download', fileName);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    // element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
+    // element.setAttribute('download', fileName);
+    // element.style.display = 'none';
+    // document.body.appendChild(element);
+    // element.click();
+    // document.body.removeChild(element);
   }
 
   const uploadImage = async (imgData: string) => {
@@ -199,7 +199,7 @@ export default function Weekly() {
         let options = { quality: 1 };
         DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
           const imgLink = await uploadImage(imgUrl.split(',')[1]);
-          console.log(imgLink)
+          console.log(imgLink);
           if (imgLink) {
             const pattern = "_graph_" + _type;
             weeklyReport = weeklyReport.replace(pattern, imgLink);
@@ -217,6 +217,13 @@ export default function Weekly() {
 
     })
     await Promise.all(promise);
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
+    element.setAttribute('download', fileName);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   }
 
   useEffect(() => {
