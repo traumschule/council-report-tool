@@ -15,6 +15,7 @@ export default function Council() {
   const [activeCouncil, setActiveCouncil] = useState(-1);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
+
   const style = {
     fontWeight: 800,
   }
@@ -58,12 +59,12 @@ export default function Council() {
     }
   }
 
+
   const exportCouncilReport = () => {
 
   }
 
   useEffect(() => {
-
   }, [])
 
   return (

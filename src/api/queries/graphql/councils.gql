@@ -1,6 +1,5 @@
 query GetElectedCouncils(
   $where: ElectedCouncilWhereInput
-  $orderBy: [ElectedCouncilOrderByInput!]
   $offset: Int
   $limit: Int
 ) {
