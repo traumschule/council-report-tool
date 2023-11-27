@@ -161,13 +161,6 @@ export default function Weekly() {
       weeklyReport = weeklyReportTempleteWithoutMediaStatus;
     writeWeeklyReport(report2, "");
     await exportImage();
-    var element = document.createElement('a');
-    // element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(weeklyReport));
-    // element.setAttribute('download', fileName);
-    // element.style.display = 'none';
-    // document.body.appendChild(element);
-    // element.click();
-    // document.body.removeChild(element);
   }
 
   const uploadImage = async (imgData: string): Promise<string> => {
@@ -204,22 +197,6 @@ export default function Weekly() {
           const pattern = "_graph_" + _type;
           weeklyReport = weeklyReport.replaceAll(pattern, imgLink);
         }
-        // DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
-        //   const imgLink = await uploadImage(imgUrl.split(',')[1]);
-        //   console.log(imgLink);
-        //   if (imgLink != "") {
-        //     const pattern = "_graph_" + _type;
-        //     weeklyReport = weeklyReport.replace(pattern, imgLink);
-        //   }
-        //   // let img = new Image();
-        //   // img.src = imgUrl;
-        //   // document.body.appendChild(img);
-        //   // var link = document.createElement('a');
-        //   // link.download = 'my-image-name.jpeg';
-        //   // link.href = imgUrl;
-        //   // link.click();
-        //   // uploadImage(imgUrl);
-        // })
       }
 
     })
