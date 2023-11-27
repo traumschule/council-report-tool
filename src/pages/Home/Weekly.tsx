@@ -170,7 +170,7 @@ export default function Weekly() {
     // document.body.removeChild(element);
   }
 
-  const uploadImage = async (imgData: string) => {
+  const uploadImage = async (imgData: string): Promise<string> => {
     const body = {
       image: imgData,
       type: "base64"
@@ -189,7 +189,7 @@ export default function Weekly() {
     if (content.success)
       return content.data.link;
     else
-      return false;
+      return "";
   }
 
   const exportImage = async () => {
@@ -197,22 +197,29 @@ export default function Weekly() {
       let node = document.getElementById(_type);
       if (node) {
         let options = { quality: 1 };
-        DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
-          const imgLink = await uploadImage(imgUrl.split(',')[1]);
-          console.log(imgLink);
-          if (imgLink) {
-            const pattern = "_graph_" + _type;
-            weeklyReport = weeklyReport.replace(pattern, imgLink);
-          }
-          // let img = new Image();
-          // img.src = imgUrl;
-          // document.body.appendChild(img);
-          // var link = document.createElement('a');
-          // link.download = 'my-image-name.jpeg';
-          // link.href = imgUrl;
-          // link.click();
-          // uploadImage(imgUrl);
-        })
+        const imgData = await DomToImage.toPng(node as Node, options);
+        const imgLink = await uploadImage(imgData.split(',')[1]);
+        console.log(imgLink);
+        if (imgLink != "") {
+          const pattern = "_graph_" + _type;
+          weeklyReport = weeklyReport.replace(pattern, imgLink);
+        }
+        // DomToImage.toPng(node as Node, options).then(async (imgUrl) => {
+        //   const imgLink = await uploadImage(imgUrl.split(',')[1]);
+        //   console.log(imgLink);
+        //   if (imgLink != "") {
+        //     const pattern = "_graph_" + _type;
+        //     weeklyReport = weeklyReport.replace(pattern, imgLink);
+        //   }
+        //   // let img = new Image();
+        //   // img.src = imgUrl;
+        //   // document.body.appendChild(img);
+        //   // var link = document.createElement('a');
+        //   // link.download = 'my-image-name.jpeg';
+        //   // link.href = imgUrl;
+        //   // link.click();
+        //   // uploadImage(imgUrl);
+        // })
       }
 
     })
