@@ -174,7 +174,7 @@ export const councilReportWithMediaStatus = `
 # Council Report
 
 - Dates: _general_startBlock_timeStamp → _general_endBlock_timeStamp
-- Council Term: _councilInfo_id
+- Council Term: _councilInfo_cycleID
 - Start block: _general_startBlock_block  _general_startBlock_hash
 - End block: _general_endBlock_block _general_endBlock_hash
 

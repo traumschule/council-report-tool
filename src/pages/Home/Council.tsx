@@ -233,7 +233,7 @@ export default function Council() {
             member: string;
             pct: number;
           };
-          _composition += "- **" + tmp_candidate.member + "**, " + tmp_candidate.pct + "%";
+          _composition += "- **" + tmp_candidate.member + "**, " + tmp_candidate.pct + "%" + String.fromCharCode(10);
         });
         councilReport = councilReport.replaceAll(pattern, _composition);
       } else {
