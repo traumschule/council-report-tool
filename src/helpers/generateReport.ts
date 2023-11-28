@@ -30,7 +30,8 @@ import {
   getForumPostStatus,
   getProposalStatus,
   getCouncilBudget,
-  getCouncilRefill
+  getCouncilRefill,
+  getBurnedToken
 
 } from "@/api";
 import { MEXC_WALLET, defaultDateTimeFormat } from "@/config";
@@ -121,7 +122,7 @@ export async function generateReport2(
   endBlockNumber: number,
 ) {
   // 1. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#general-1
-
+  const burnedToken = await getBurnedToken();
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
@@ -192,7 +193,7 @@ export async function generateReport2(
     fundingProposals: fundingProposalBudget,
     creatorPayoutRewards: creatorPayoutRewardBudget,
     validatorRewards: validatorRewardsBudget,
-    fees: grandTotal - issuanceChange,
+    fees: burnedToken,
     grandTotal
   };
   const totalSupply = toJoy(await getTotalSupply(api, endBlockHash));
@@ -204,7 +205,7 @@ export async function generateReport2(
     inflationChanged: decimalAdjust(inflation),
     circulatingSupply,
     mintedToken: issuanceChange,
-    burnedToken: grandTotal - issuanceChange,
+    burnedToken
   };
 
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
@@ -664,14 +665,14 @@ export async function generateReport4(
     prevSpendingOfJoy: prevGrandTotal,
     prevSpendingOfUsd: Math.ceil(prevGrandTotal * Number(EMA30.prevEMA)),
   }
-  const fees = grandTotal - issuanceChange;
-  const prevFees = prevGrandTotal - prevTermissuanceChange;
+  const fees = await getBurnedToken();
+  // const prevFees = prevGrandTotal - prevTermissuanceChange;
   overallBudget["fees"] = {
     id: "fees",
     currentSpendingOfJoy: fees,
     currentSpendingOfUsd: Math.ceil(fees * Number(EMA30.curEMA)),
-    prevSpendingOfJoy: prevFees,
-    prevSpendingOfUsd: Math.ceil(prevFees * Number(EMA30.prevEMA)),
+    prevSpendingOfJoy: 0,
+    prevSpendingOfUsd: 0
   }
   const { startCouncilBudget, endCouncilBudget } = await getCouncilBudget(
     api,

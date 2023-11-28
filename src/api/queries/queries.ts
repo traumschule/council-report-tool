@@ -1,7 +1,7 @@
 import { GraphQLClient } from "graphql-request";
 import { BN, BN_ZERO } from "@polkadot/util";
 import moment from "moment";
-import { QN_URL } from "@/config";
+import { QN_URL, FEE_QN_URL } from "@/config";
 import {
   asProposal,
   Proposal,
@@ -1141,8 +1141,25 @@ export const getElectionRoundWithUniqueID = async (uniqueID: string) => {
   return electionRound;
 };
 
-
-
-
-
-
+export const getBurnedToken = async () => {
+  const body = {
+    "query": "query{\n  feesInfos{\n  balancesDepositSum\n    balancesSlashedSum\n    balancesWithdrawSum\n    balancesDustLostSum\n  }\n}",
+    "variables": null
+  }
+  const response = await fetch('https://monitoring.joyutils.org/fees/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body)
+  });
+  const content = await response.json();
+  if (response.status == 200) {
+    const feeInfo = content.data.feesInfos[0];
+    let fee = string2Joy(feeInfo.balancesDustLostSum) + string2Joy(feeInfo.balancesWithdrawSum) + string2Joy(feeInfo.balancesSlashedSum);
+    return Math.ceil(fee);
+  }
+  else
+    return 0;
+}
