@@ -172,13 +172,6 @@ export async function generateReport2(
     changedBalance: mexcBalChange
   }
 
-  // 4. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#supply-1
-
-  const startInflation =
-    ((startIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
-  const endInflation = ((endIssuance - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
-  const inflationChanged = endInflation - startInflation;
-
   // // 5. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#dao-spending
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
@@ -202,11 +195,13 @@ export async function generateReport2(
     fees: grandTotal - issuanceChange,
     grandTotal
   };
-  const totalSupply = await getOfficialTotalSupply();
+  const totalSupply = toJoy(await getTotalSupply(api, endBlockHash));
   const circulatingSupply = await getOfficialCirculatingSupply();
+  const inflation = ((totalSupply - INITIAL_SUPPLY) / INITIAL_SUPPLY) * 100;
+
   const supply = {
     totalSupply,
-    inflationChanged: decimal3DAdjust(inflationChanged),
+    inflationChanged: decimalAdjust(inflation),
     circulatingSupply,
     mintedToken: issuanceChange,
     burnedToken: grandTotal - issuanceChange,
