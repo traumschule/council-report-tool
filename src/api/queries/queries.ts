@@ -1146,7 +1146,7 @@ export const getBurnedToken = async () => {
     "query": "query{\n  feesInfos{\n  balancesDepositSum\n    balancesSlashedSum\n    balancesWithdrawSum\n    balancesDustLostSum\n  }\n}",
     "variables": null
   }
-  const response = await fetch('https://monitoring.joyutils.org/fees/graphql', {
+  const response = await fetch(FEE_QN_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
