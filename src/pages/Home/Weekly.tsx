@@ -15,12 +15,12 @@ import {
 } from "recharts";
 import DomToImage from "dom-to-image";
 import { weeklyReportTemplateWithMediaStatus, weeklyReportTempleteWithoutMediaStatus, proposalLink } from "@/config";
-
+import { uploadImage } from "@/helpers";
 
 function JoyChart({ data, title, id }: { data: DailyData[]; title: string, id: string }) {
   if (data.length === 0) return <></>;
   return (
-    <div className="p-2" id="graph">
+    <div className="p-2">
       <h3>{title}</h3>
       <div id={id}>
         <BarChart id={id} width={730} height={250} data={data}>
@@ -104,7 +104,7 @@ export default function Weekly() {
       if (typeof (obj_data[_title as obj_data_key]) != "object" && _title != "proposals" && obj_data[_title as obj_data_key] != undefined) {
         const pattern = name_alias + "_" + _title;
         const value = String(obj_data[_title as obj_data_key]);
-        weeklyReport = weeklyReport.replace(pattern, value);
+        weeklyReport = weeklyReport.replaceAll(pattern, value);
       } else if (_title == "proposals") {
         const proposals = obj_data[_title as obj_data_key];
         type proposals_type = keyof typeof proposals;
@@ -121,7 +121,7 @@ export default function Weekly() {
             proposal_txt += "- [" + status.title + "](" + proposalLink + status.id + ")" + String.fromCharCode(10);
           }));
           const pattern = _title + "_" + _status;
-          weeklyReport = weeklyReport.replace(pattern, proposal_txt);
+          weeklyReport = weeklyReport.replaceAll(pattern, proposal_txt);
         })
 
       } else {
@@ -161,28 +161,6 @@ export default function Weekly() {
       weeklyReport = weeklyReportTempleteWithoutMediaStatus;
     writeWeeklyReport(report2, "");
     await exportImage();
-  }
-
-  const uploadImage = async (imgData: string): Promise<string> => {
-    const body = {
-      image: imgData,
-      type: "base64"
-    }
-    const response = await fetch('https://api.imgur.com/3/image', {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: "Client-ID aeb5866135440bd"
-      },
-      body: JSON.stringify(body)
-    });
-    const content = await response.json();
-
-    if (content.success)
-      return content.data.link;
-    else
-      return "";
   }
 
   const exportImage = async () => {
@@ -283,7 +261,6 @@ export default function Weekly() {
       {
         storageFlag ? (<JoyChart data={storageChart} title="New Media Uploads (GB)" id="mediaStorageChart" />
         ) : null}
-      {/* <Charts start={startBlock} end={endBlock} storageStatus={storageFlag} /> */}
     </div>
   );
 }

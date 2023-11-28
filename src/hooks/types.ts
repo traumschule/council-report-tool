@@ -1,5 +1,5 @@
 import { ElectedCouncil } from '@/types';
-import BN from 'bn.js';
+import { GroupShortIDName, OverallBudgetKeys } from '@/types';
 
 export interface ForSelectedCouncil {
   council?: ElectedCouncil;
@@ -29,4 +29,34 @@ export type BudgetData = {
 export type CouncilBudgetData = {
   memberId: string,
   amount: number
+}
+
+export type WGspedingType = {
+  [key in GroupShortIDName]: spendigBudgetBarType
+}
+
+export type OverallType = {
+  [key in OverallBudgetKeys]: spendigBudgetBarType
+}
+
+export type spendigBudgetBarType = {
+  id: string;
+  prevSpendingOfJoy: number;
+  prevSpendingOfUsd: number;
+  currentSpendingOfJoy: number;
+  currentSpendingOfUsd: number;
+}
+
+export type spendingBudgetPieType = {
+  name: string;
+  value: number;
+}
+
+export type wgBudgetType = {
+  startWGBudget: number;
+  endWGBudget: number;
+  refillBudget: number;
+  workerRewards: number;
+  leadRewards: number;
+  actualSpending: number;
 }

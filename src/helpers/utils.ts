@@ -101,3 +101,25 @@ export const decimalAdjust = (value: number): number => {
 export const decimal3DAdjust = (value: number): number => {
   return Math.ceil(value * Math.pow(10, 3)) / Math.pow(10, 3);
 }
+
+export const uploadImage = async (imgData: string): Promise<string> => {
+  const body = {
+    image: imgData,
+    type: "base64"
+  }
+  const response = await fetch('https://api.imgur.com/3/image', {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: "Client-ID aeb5866135440bd"
+    },
+    body: JSON.stringify(body)
+  });
+  const content = await response.json();
+
+  if (content.success)
+    return content.data.link;
+  else
+    return "";
+}

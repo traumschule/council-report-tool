@@ -3,11 +3,7 @@ import { BN, BN_ZERO } from "@polkadot/util";
 import moment from "moment";
 import { QN_URL } from "@/config";
 import {
-  asElectedCouncil,
   asProposal,
-  asWorkingGroup,
-  Block,
-  ElectedCouncil,
   Proposal,
   WorkingGroup,
 } from "@/types";
@@ -721,6 +717,31 @@ export const getProposals = async (
 
   return proposals.map(asProposal);
 };
+
+export const getProposalStatus = async (
+  start: Date,
+  end: Date
+) => {
+  const { getProposalTotalCount } = getSdk(client);
+  const { proposalsConnection: { totalCount: startBlock } } = await getProposalTotalCount({
+    where: {
+      createdAt_lte: start
+    }
+  });
+  const { proposalsConnection: { totalCount: endBlock } } = await getProposalTotalCount({
+    where: {
+      createdAt_lte: end
+    }
+  });
+  const growthQty = endBlock - startBlock;
+  const growthPct = decimalAdjust(100 * growthQty / startBlock);
+  return {
+    startBlock,
+    endBlock,
+    growthQty,
+    growthPct,
+  }
+}
 
 // workers
 

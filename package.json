@@ -16,6 +16,7 @@
   "dependencies": {
     "@apollo/client": "^3.8.3",
     "@joystream/types": "^2.1.0",
+    "@mui/x-charts": "^6.18.2",
     "@polkadot/api": "8.9.1",
     "@polkadot/util": "9.5.1",
     "@types/dom-to-image": "^2.6.7",
@@ -30,6 +31,7 @@
     "react-dom": "^18.2.0",
     "react-json-view": "^1.21.3",
     "react-markdown": "^8.0.7",
+    "react-minimal-pie-chart": "^8.4.0",
     "react-select": "^5.7.4",
     "recharts": "^2.8.0",
     "remark-gfm": "^3.0.1",
