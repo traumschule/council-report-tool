@@ -31,7 +31,8 @@ import {
   getProposalStatus,
   getCouncilBudget,
   getCouncilRefill,
-  getBurnedToken
+  getBurnedToken,
+  getWGSpendingProposal
 
 } from "@/api";
 import { MEXC_WALLET, defaultDateTimeFormat } from "@/config";
@@ -122,7 +123,7 @@ export async function generateReport2(
   endBlockNumber: number,
 ) {
   // 1. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#general-1
-  const burnedToken = await getBurnedToken();
+  // const burnedToken = await getBurnedToken();
   const startBlockHash = await getBlockHash(api, startBlockNumber);
   const startBlockTimestamp = new Date(
     (await (await api.at(startBlockHash)).query.timestamp.now()).toNumber()
@@ -147,6 +148,7 @@ export async function generateReport2(
     startBlock,
     endBlock
   }
+
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
 
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
@@ -177,7 +179,7 @@ export async function generateReport2(
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
   const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
-  const wgSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
+  const wgSalary = await getWorkingGroupSalary(api, startBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   const wgSpent = Object.keys(wgSalary)
     .reduce((a, b) => a + wgSalary[b as GroupIdName].leadSalary + wgSalary[b as GroupIdName].workerSalary, 0);
 
@@ -193,7 +195,7 @@ export async function generateReport2(
     fundingProposals: fundingProposalBudget,
     creatorPayoutRewards: creatorPayoutRewardBudget,
     validatorRewards: validatorRewardsBudget,
-    fees: burnedToken,
+    fees: grandTotal - issuanceChange,
     grandTotal
   };
   const totalSupply = toJoy(await getTotalSupply(api, endBlockHash));
@@ -205,7 +207,7 @@ export async function generateReport2(
     inflationChanged: decimalAdjust(inflation),
     circulatingSupply,
     mintedToken: issuanceChange,
-    burnedToken
+    burnedToken: grandTotal - issuanceChange,
   };
 
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
@@ -436,7 +438,7 @@ export async function generateReport4(
     yearInflation: decimal3DAdjust(yearInflation)
   }
 
-  const { wgWorkerStatus, wgWorkerTotal } = await getWGWorkerStatus(api, endBlockHash, startBlockTimestamp, endBlockTimestamp);
+  const { wgWorkerStatus, wgWorkerTotal } = await getWGWorkerStatus(api, startBlockHash, startBlockTimestamp, endBlockTimestamp);
 
   // nonEmptyChannel
 
@@ -538,14 +540,14 @@ export async function generateReport4(
   }
   const currentWGRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
   const currentWGBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
-  const currentWGSalary = await getWorkingGroupSalary(api, endBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
+  const currentWGSalary = await getWorkingGroupSalary(api, startBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   const prevTermStartBlock = electedCouncils[currentTerm - 2].electedAtBlock;
   let prevTermEndBlock = electedCouncils[currentTerm - 2].endedAtBlock;
   if (!prevTermEndBlock)
     prevTermEndBlock = prevTermStartBlock;
   const prevTermStartBlockHash = await getBlockHash(api, prevTermStartBlock);
   const prevTermEndBlockHash = await getBlockHash(api, prevTermEndBlock);
-  const prevWGSalary = await getWorkingGroupSalary(api, prevTermEndBlockHash, new Date(electedCouncils[currentTerm - 1].electedAtTime), new Date(electedCouncils[currentTerm - 1].endedAtTime), prevTermStartBlock, prevTermEndBlock);
+  const prevWGSalary = await getWorkingGroupSalary(api, prevTermStartBlockHash, new Date(electedCouncils[currentTerm - 1].electedAtTime), new Date(electedCouncils[currentTerm - 1].endedAtTime), prevTermStartBlock, prevTermEndBlock);
   const prevStartElectedIssuance = toJoy(await getTotalSupply(api, prevTermStartBlockHash));
   const prevEndElectedIssuance = toJoy(await getTotalSupply(api, prevTermEndBlockHash));
   const prevTermissuanceChange = prevEndElectedIssuance - prevStartElectedIssuance;
@@ -665,7 +667,7 @@ export async function generateReport4(
     prevSpendingOfJoy: prevGrandTotal,
     prevSpendingOfUsd: Math.ceil(prevGrandTotal * Number(EMA30.prevEMA)),
   }
-  const fees = await getBurnedToken();
+  const fees = grandTotal - issuanceChange;
   // const prevFees = prevGrandTotal - prevTermissuanceChange;
   overallBudget["fees"] = {
     id: "fees",

@@ -31,6 +31,7 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
         const activeWorkers = Number(_activeWorkers);
         const nextWorkerId = Number(_nextWorkerId);
         for (let i = 0; i < nextWorkerId; i++) {
+
             const _workerInfo = (await _api.query[group].workerById(i));
             if (activeWorkers == workerNumber)
                 continue;
@@ -63,6 +64,7 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                                     payout += string2Joy(a.amount);
                                 });
                         });
+
                     wgSalary.daoSpendingBudget += Math.ceil(daoSpendingBudget);
                     if (i == Number(currentLead)) {
                         wgSalary.leadSalary += Math.ceil(daoSpendingBudget);
@@ -71,6 +73,7 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                         wgSalary.workerSalary += Math.ceil(daoSpendingBudget);
                         wgSalary.workerSalary += Math.ceil(payout);
                     }
+                    console.log(_group + " " + i + " budget +" + wgSalary.workerSalary);
                 }
                 workerNumber++;
             }
