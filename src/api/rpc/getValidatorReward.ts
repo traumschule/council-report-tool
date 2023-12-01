@@ -1,7 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
 import { HexString } from "@polkadot/util/types";
-import { toJoy } from "@/helpers";
-import { BN } from "bn.js";
 
 export async function getValidatorReward(
     api: ApiPromise,
@@ -12,9 +10,11 @@ export async function getValidatorReward(
     const startEra = Number((await (await api.at(startBlockHash)).query.staking.activeEra()).unwrap().index);
     const endEra = Number((await (await api.at(endBlockHash)).query.staking.activeEra()).unwrap().index);
     for (let i = startEra; i <= endEra; i++) {
-        const reward = await api.query.staking.erasValidatorReward(i);
-        if (!reward.isNone)
-            totalReward += Number(reward.unwrap());
+        const reward = await (await api.at(endBlockHash)).query.staking.erasValidatorReward(i);
+        if (!reward.isNone) {
+            totalReward += Number(reward.unwrap()) / Math.pow(10, 10);
+        }
+
     }
-    return toJoy(new BN(totalReward));
+    return Math.ceil(totalReward);
 }

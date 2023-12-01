@@ -148,7 +148,6 @@ export async function generateReport2(
     startBlock,
     endBlock
   }
-
   // 2. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#issuance
 
   const startIssuance = toJoy(await getTotalSupply(api, startBlockHash));
@@ -334,6 +333,7 @@ export async function generateReport4(
   const endBlockTimestamp = new Date(
     (await (await api.at(endBlockHash)).query.timestamp.now()).toNumber()
   );
+
   const general = {
     startBlock: {
       block: startBlockNumber,
@@ -374,9 +374,8 @@ export async function generateReport4(
       cycleID: electionRound.cycleId
     }
   }
-
+  const test = await getValidatorReward(api, startBlockHash, endBlockHash);
   // EMA 30
-
   const EMA30 = {
     prevEMA,
     curEMA

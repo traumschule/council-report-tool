@@ -73,7 +73,6 @@ export async function getWorkingGroupSalary(api: ApiPromise, block: HexString, s
                         wgSalary.workerSalary += Math.ceil(daoSpendingBudget);
                         wgSalary.workerSalary += Math.ceil(payout);
                     }
-                    console.log(_group + " " + i + " budget +" + wgSalary.workerSalary);
                 }
                 workerNumber++;
             }
