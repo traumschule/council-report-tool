@@ -4,7 +4,7 @@ export const NODE_SOCKET =
   import.meta.env.VITE_NODE_SOCKET || "wss://rpc.joystream.org:9944";
 export const FEE_QN_URL = "https://monitoring.joyutils.org/fees/graphql";
 export const MEXC_WALLET = "5CFYPwkpP4oEeCUviVafWBNwpRPF7SjUpL4q8A7KtJJhQ1gJ";
-export const defaultDateTimeFormat = "MMMM DD YYYY";
+export const defaultDateTimeFormat = "DD MMMM YYYY";
 export const proposalLink = "https://pioneerapp.xyz/#/proposals/preview/";
 export const weeklyReportTemplateWithMediaStatus = `
 **_general_startBlock_timestamp - _general_endBlock_timestamp**
