@@ -202,7 +202,11 @@ export default function Council() {
     Object.keys(councilReportData).map((_type) => {
       if (typeof (councilReportData[_type as reportKeys]) != "object" && _type != "projectInflations" && councilReportData[_type as reportKeys] != undefined && _type != "composition") {
         const pattern = alias + "_" + _type;
-        const value = String(councilReportData[_type as reportKeys]);
+        let value: any = councilReportData[_type as reportKeys];
+        if (typeof (value) == "number")
+          value = Number(value).toLocaleString('en-US');
+        else
+          value = String(value);
         councilReport = councilReport.replaceAll(pattern, value);
       } else if (_type == "projectInflations") {
         let _project_inflation = "";
@@ -220,7 +224,7 @@ export default function Council() {
           totalInflation += tmp_inflation.inflation;
           _project_inflation += "| " + tmp_inflation.term + " | " + tmp_inflation.mintedToken + " | " + tmp_inflation.inflation + " % |" + String.fromCharCode(10);
         });
-        _project_inflation += "| Total" + " | " + totalMinted + " | " + totalInflation + " % |" + String.fromCharCode(10);
+        _project_inflation += "| Total" + " | " + totalMinted + " | " + decimalAdjust(totalInflation) + " % |" + String.fromCharCode(10);
         const pattern = '_project_inflation';
         councilReport = councilReport.replace(pattern, _project_inflation);
       } else if (_type == "composition") {

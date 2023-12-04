@@ -103,7 +103,11 @@ export default function Weekly() {
     Object.keys(obj_data).map((_title) => {
       if (typeof (obj_data[_title as obj_data_key]) != "object" && _title != "proposals" && obj_data[_title as obj_data_key] != undefined) {
         const pattern = name_alias + "_" + _title;
-        const value = String(obj_data[_title as obj_data_key]);
+        let value: any = obj_data[_title as obj_data_key];
+        if (typeof (value) == "number")
+          value = Number(value).toLocaleString('en-US');
+        else
+          value = String(value);
         weeklyReport = weeklyReport.replaceAll(pattern, value);
       } else if (_title == "proposals") {
         const proposals = obj_data[_title as obj_data_key];
@@ -256,8 +260,8 @@ export default function Weekly() {
 
       <JoyChart data={videoChart} title="New Videos" id="videosChart" />
       <JoyChart data={nftChart} title="New NFT Minted" id="videoNftChart" />
-      <JoyChart data={channelChart} title="Non-empty channels" id="nonEmptyChannelChart" />
-      <JoyChart data={membershipChart} title="Membership" id="membershipChart" />
+      <JoyChart data={channelChart} title="New Non-empty channels" id="nonEmptyChannelChart" />
+      <JoyChart data={membershipChart} title="New Membership" id="membershipChart" />
       {
         storageFlag ? (<JoyChart data={storageChart} title="New Media Uploads (GB)" id="mediaStorageChart" />
         ) : null}
