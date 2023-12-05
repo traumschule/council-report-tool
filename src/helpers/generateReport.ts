@@ -178,10 +178,12 @@ export async function generateReport2(
   const councilReward = await getCouncilReward(startBlockNumber, endBlockNumber);
   const councilRewardBudget = councilReward.reduce((a, b) => a + b.amount, 0);
   const validatorRewardsBudget = await getValidatorReward(api, startBlockHash, endBlockHash);
-  const wgSalary = await getWorkingGroupSalary(api, startBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
-  const wgSpent = Object.keys(wgSalary)
-    .reduce((a, b) => a + wgSalary[b as GroupIdName].leadSalary + wgSalary[b as GroupIdName].workerSalary, 0);
-
+  const wgRefillProposal = await getWGRefillProposal(startBlockTimestamp, endBlockTimestamp);
+  const wgudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
+  let wgSpent = Object.keys(wgudget)
+    .reduce((a, b) => a + wgudget[b as GroupIdName].startBudget - wgudget[b as GroupIdName].endBudget, 0);
+  const wgRefillBudget = Object.keys(wgRefillProposal).reduce((a, b) => a + wgRefillProposal[b as GroupIdName], 0);
+  wgSpent += wgRefillBudget;
   const creatorPayoutRewardBudget = await getCreatorPayoutReward(startBlockNumber, endBlockNumber);
   const fundingProposalBudget = await getFundingProposal(startBlockNumber, endBlockNumber);
   const grandTotal = councilRewardBudget + wgSpent + fundingProposalBudget + creatorPayoutRewardBudget + validatorRewardsBudget;
@@ -190,7 +192,7 @@ export async function generateReport2(
     endIssuance,
     mintedToken: issuanceChange,
     councilReward: councilRewardBudget,
-    wgSpent: wgSpent,
+    wgSpent,
     fundingProposals: fundingProposalBudget,
     creatorPayoutRewards: creatorPayoutRewardBudget,
     validatorRewards: validatorRewardsBudget,
@@ -374,7 +376,7 @@ export async function generateReport4(
       cycleID: electionRound.cycleId
     }
   }
-  const test = await getValidatorReward(api, startBlockHash, endBlockHash);
+
   // EMA 30
   const EMA30 = {
     prevEMA,
@@ -541,16 +543,21 @@ export async function generateReport4(
   const currentWGBudget = await getWorkingGroupBudget(api, startBlockHash, endBlockHash);
   const currentWGSalary = await getWorkingGroupSalary(api, startBlockHash, startBlockTimestamp, endBlockTimestamp, startBlockNumber, endBlockNumber);
   const prevTermStartBlock = electedCouncils[currentTerm - 2].electedAtBlock;
+  const prevTermStartTimeStamp = electedCouncils[currentTerm - 2].electedAtTime;
   let prevTermEndBlock = electedCouncils[currentTerm - 2].endedAtBlock;
-  if (!prevTermEndBlock)
+  let prevTermEndTimeStamp = electedCouncils[currentTerm - 2].endedAtTime;
+  if (!prevTermEndBlock) {
     prevTermEndBlock = prevTermStartBlock;
+    prevTermEndTimeStamp = prevTermStartTimeStamp;
+  }
+
   const prevTermStartBlockHash = await getBlockHash(api, prevTermStartBlock);
   const prevTermEndBlockHash = await getBlockHash(api, prevTermEndBlock);
-  const prevWGSalary = await getWorkingGroupSalary(api, prevTermStartBlockHash, new Date(electedCouncils[currentTerm - 1].electedAtTime), new Date(electedCouncils[currentTerm - 1].endedAtTime), prevTermStartBlock, prevTermEndBlock);
   const prevStartElectedIssuance = toJoy(await getTotalSupply(api, prevTermStartBlockHash));
   const prevEndElectedIssuance = toJoy(await getTotalSupply(api, prevTermEndBlockHash));
   const prevTermissuanceChange = prevEndElectedIssuance - prevStartElectedIssuance;
-
+  const prevWGRefillProposal = await getWGRefillProposal(new Date(prevTermEndBlockHash), new Date(prevTermEndTimeStamp));
+  const prevWGBudget = await getWorkingGroupBudget(api, prevTermStartBlockHash, prevTermEndBlockHash);
   Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
       type wgDataType = keyof typeof wgBudgetOfJoyTotal;
@@ -565,6 +572,7 @@ export async function generateReport4(
       if (currentWGRefillProposal[_group as GroupIdName]) {
         wgDataOfJoy.refillBudget = currentWGRefillProposal[_group as GroupIdName];
       }
+      let wgSpent = wgDataOfJoy.startWGBudget + wgDataOfJoy.refillBudget - wgDataOfJoy.endWGBudget;
       let wgDataOfUsd: wgBudgetType = {
         startWGBudget: Math.ceil(wgDataOfJoy.startWGBudget * Number(EMA30.curEMA)),
         endWGBudget: Math.ceil(wgDataOfJoy.endWGBudget * Number(EMA30.curEMA)),
@@ -573,13 +581,15 @@ export async function generateReport4(
         workerRewards: Math.ceil(wgDataOfJoy.workerRewards * Number(EMA30.curEMA)),
         leadRewards: Math.ceil(wgDataOfJoy.leadRewards * Number(EMA30.curEMA)),
       }
-      const prevSpendingOfJoy = prevWGSalary[_group as GroupIdName].leadSalary + prevWGSalary[_group as GroupIdName].workerSalary;
+      let prevSpendingOfJoy = prevWGBudget[_group as GroupIdName].startBudget - prevWGBudget[_group as GroupIdName].endBudget;
+      if (prevWGRefillProposal[_group as GroupIdName])
+        prevSpendingOfJoy += prevWGRefillProposal[_group as GroupIdName];
       let wgSpending_tmp = {
         id: GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName,
         prevSpendingOfJoy: prevSpendingOfJoy,
         prevSpendingOfUsd: Math.ceil(prevSpendingOfJoy * Number(EMA30.prevEMA)),
-        currentSpendingOfJoy: wgDataOfJoy.actualSpending,
-        currentSpendingOfUsd: Math.ceil(wgDataOfJoy.actualSpending * Number(EMA30.curEMA))
+        currentSpendingOfJoy: wgSpent,
+        currentSpendingOfUsd: Math.ceil(wgSpent * Number(EMA30.curEMA))
       }
       wgSpending[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgSpending_tmp;
       wgBudgetsOfUsd[GroupIdToGroupParam[_group as GroupIdName] as GroupShortIDName] = wgDataOfUsd;
