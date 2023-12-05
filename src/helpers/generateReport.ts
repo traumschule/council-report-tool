@@ -556,7 +556,7 @@ export async function generateReport4(
   const prevStartElectedIssuance = toJoy(await getTotalSupply(api, prevTermStartBlockHash));
   const prevEndElectedIssuance = toJoy(await getTotalSupply(api, prevTermEndBlockHash));
   const prevTermissuanceChange = prevEndElectedIssuance - prevStartElectedIssuance;
-  const prevWGRefillProposal = await getWGRefillProposal(new Date(prevTermEndBlockHash), new Date(prevTermEndTimeStamp));
+  const prevWGRefillProposal = await getWGRefillProposal(new Date(prevTermStartTimeStamp), new Date(prevTermEndTimeStamp));
   const prevWGBudget = await getWorkingGroupBudget(api, prevTermStartBlockHash, prevTermEndBlockHash);
   Object.keys(GroupIdToGroupParam)
     .map(async (_group) => {
