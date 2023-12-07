@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactJson from "react-json-view";
 import { useRpc } from "@/hooks";
+import { getBurnedToken } from "@/api";
 import { generateReport1 } from "@/helpers";
 
 export default function Report1() {
@@ -11,6 +12,7 @@ export default function Report1() {
   const [currentBlock, setCurrentBlock] = useState<number | undefined>(
     undefined
   );
+  const [totalBurn, setTotalBurn] = useState<number | undefined>(undefined);
   const [block, setBlock] = useState(0);
   const [storage, setStorage] = useState(false);
 
@@ -18,8 +20,10 @@ export default function Report1() {
     (async () => {
       if (!api) return;
       const blockHeader = await api.rpc.chain.getHeader();
+      const burnedToken = await getBurnedToken();
       const currentBlockNumber = blockHeader.number.toNumber();
       setCurrentBlock(currentBlockNumber);
+      setTotalBurn(burnedToken);
       setBlock(currentBlockNumber);
     })();
   }, [api]);
@@ -42,6 +46,9 @@ export default function Report1() {
       <div className="rounded-sm p-2 mt-4 border-2 border-[#fff]">
         <div>
           Current block number: {currentBlock ? currentBlock : "Loading..."}
+        </div>
+        <div>
+          Total burn : {totalBurn ? totalBurn.toLocaleString('en-US') + " JOY" : "Loading"}
         </div>
         <div >
           <label  >Block:</label>
