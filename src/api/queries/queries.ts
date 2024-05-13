@@ -1,268 +1,46 @@
-import { GraphQLClient } from "graphql-request";
 import { BN, BN_ZERO } from "@polkadot/util";
 import moment from "moment";
-import { QN_URL, FEE_QN_URL } from "@/config";
+import { FEE_QN_URL } from "@/config";
 import { asProposal, Proposal, WorkingGroup } from "@/types";
 
 import { getSdk } from "./__generated__/gql";
 import { toJoy, decimalAdjust, string2Joy } from "@/helpers";
 import { GroupIdToGroupParam, GroupIdName } from "@/types";
 import { DailyData, ChannelData } from "@/hooks/types";
+import { client } from "./client";
 export { getSdk } from "./__generated__/gql";
-
-export const client = new GraphQLClient(QN_URL);
-
-// StorageDataObjects
-
-export const getStorageChartData = async (start: Date, end: Date) => {
-  const { GetStorageDataObjectsCount, GetStorageDataObjects } = getSdk(client);
-  const defaultLimit = 5000;
-  let curDate = moment(start).format("YYYY-MM-DD");
-  let data: Array<DailyData> = [];
-  let storageSize = 0;
-  const {
-    storageDataObjectsConnection: { totalCount },
-  } = await GetStorageDataObjectsCount({
-    where: {
-      createdAt_lte: end,
-      createdAt_gt: start,
-    },
-  });
-  const loop = Math.ceil(totalCount / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { storageDataObjects } = await GetStorageDataObjects({
-      where: {
-        createdAt_lte: end,
-        createdAt_gt: start,
-      },
-      limit: defaultLimit,
-      offset: defaultLimit * i,
-    });
-    storageDataObjects.map((a) => {
-      if (moment(a.createdAt).format("YYYY-MM-DD") == curDate) {
-        storageSize += parseInt(a.size) / 1024 / 1024 / 1024;
-      } else {
-        data.push({
-          date: new Date(curDate),
-          count: storageSize,
-        });
-        storageSize = parseInt(a.size) / 1024 / 1024 / 1024;
-        curDate = moment(a.createdAt).format("YYYY-MM-DD");
-      }
-    });
-  }
-  data.push({
-    date: new Date(curDate),
-    count: storageSize,
-  });
-  return data;
-};
-
-export const getStorageStatus = async (end: Date, start?: Date) => {
-  const { GetStorageDataObjects, GetStorageDataObjectsCount } = getSdk(client);
-  const defalultOffset = 5000;
-  const { storageDataObjectsConnection } = await GetStorageDataObjectsCount({
-    where: {
-      createdAt_lte: end,
-    },
-  });
-  const data: Array<DailyData> = [];
-  let curDate = "";
-  const { totalCount } = storageDataObjectsConnection;
-  let loop = Math.ceil(totalCount / defalultOffset);
-  let startStorage = 1;
-  let endStorage = 1;
-  let storageSize = 0;
-  for (let i = 0; i < loop; i++) {
-    const { storageDataObjects } = await GetStorageDataObjects({
-      where: {
-        createdAt_lte: end,
-      },
-      limit: defalultOffset,
-      offset: defalultOffset * i,
-    });
-    storageDataObjects.map((storage) => {
-      if (start) {
-        let storageCreateAt = new Date(storage.createdAt);
-        if (storageCreateAt < start) {
-          startStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-        } else {
-          if (curDate == "")
-            curDate = moment(storage.createdAt).format("YYYY-MM-DD");
-          if (moment(storage.createdAt).format("YYYY-MM-DD") == curDate) {
-            storageSize += parseInt(storage.size) / 1024 / 1024 / 1024;
-          } else {
-            data.push({
-              date: new Date(curDate),
-              count: storageSize,
-            });
-            storageSize = parseInt(storage.size) / 1024 / 1024 / 1024;
-            curDate = moment(storage.createdAt).format("YYYY-MM-DD");
-          }
-        }
-      }
-      endStorage += parseInt(storage.size) / 1024 / 1024 / 1024;
-    });
-  }
-  if (start) {
-    data.push({
-      date: new Date(curDate),
-      count: storageSize,
-    });
-  }
-  return {
-    startStorage: decimalAdjust(startStorage),
-    endStorage: decimalAdjust(endStorage),
-    chartData: data,
-  };
-};
 
 // NonEmptyChannel
 
-export const getChannelStatus = async (
-  endBlockNumber: number,
-  startDate?: Date,
-) => {
-  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 5000;
-  let startCount: string[] = [];
-  let endCount: string[] = [];
-  let channelCount: number = 0;
-  let curDate = moment(startDate).format("YYYY-MM-DD");
-  const totalChannels: Array<ChannelData> = [];
-  const channelChart: Array<DailyData> = [];
-  const {
-    videosConnection: { totalCount: videoCount },
-  } = await GetVideoCount({
-    where: {
-      createdInBlock_lte: endBlockNumber,
-    },
-  });
-  const loop = Math.ceil(videoCount / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { videos } = await GetNonEmptyChannel({
-      where: {
-        createdInBlock_lte: endBlockNumber,
-      },
-      limit: defaultLimit,
-      offset: defaultLimit * i,
-    });
-    videos.map((video) => {
-      let flag = endCount.find((a) => {
-        return a == video.channelId;
-      });
-      if (!flag) {
-        if (startDate) {
-          let channelCreatedAt = new Date(video.channel.createdAt);
-          if (channelCreatedAt <= startDate) {
-            startCount.push(video.channelId);
-          }
-        }
-        totalChannels.push(video.channel);
-        endCount.push(video.channelId);
-      }
-    });
-  }
-  if (startDate) {
-    totalChannels
-      .sort((a1, a2) => {
-        if (a1.createdAt <= a2.createdAt) {
-          return -1;
-        } else {
-          return 1;
-        }
-      })
-      .filter((a) => {
-        return new Date(a.createdAt) > startDate;
-      })
-      .map((a) => {
-        if (moment(a.createdAt).format("YYYY-MM-DD") == curDate) {
-          channelCount += 1;
-        } else {
-          channelChart.push({
-            count: channelCount,
-            date: new Date(curDate),
-          });
-          channelCount = 1;
-          curDate = moment(a.createdAt).format("YYYY-MM-DD");
-        }
-      });
-    channelChart.push({
-      count: channelCount,
-      date: new Date(curDate),
-    });
-  }
-
-  return {
-    startCount: startCount.length,
-    endCount: endCount.length,
-    chartData: channelChart,
-  };
-};
-
 export const getChannelChartData = async (
-  endBlock: number,
-  startDate: Date,
+  start: number,
+  end: number,
+  totalCount: number,
 ) => {
-  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 5000;
-  let channelCount: number = 0;
-  const totalChannels: Array<ChannelData> = [];
-  const channelChart: Array<DailyData> = [];
-  let curDate = moment(startDate).format("YYYY-MM-DD");
-  const {
-    videosConnection: { totalCount },
-  } = await GetVideoCount({
-    where: {
-      createdInBlock_lte: endBlock,
-    },
-  });
+  const chart: Map<string, number> = new Map();
+
+  const { GetChannelCreationDate } = getSdk(client);
+  const defaultLimit = 40_000;
   const loop = Math.ceil(totalCount / defaultLimit);
   for (let i = 0; i < loop; i++) {
-    const { videos } = await GetNonEmptyChannel({
+    const { channels } = await GetChannelCreationDate({
       where: {
-        createdInBlock_lte: endBlock,
+        createdInBlock_gt: start,
+        createdInBlock_lte: end,
+        totalVideosCreated_gt: 0,
       },
       limit: defaultLimit,
       offset: defaultLimit * i,
     });
-    videos.map((video) => {
-      let flag = totalChannels.find((channel) => {
-        return channel.id == video.channelId;
-      });
-      if (!flag) {
-        totalChannels.push(video.channel);
-      }
-    });
+    channels
+      .map(({ createdAt }) => createdAt.split("T")[0])
+      .forEach((date) => chart.set(date, (chart.get(date) || 0) + 1));
   }
-  totalChannels
-    .sort((a1, a2) => {
-      if (a1.createdAt <= a2.createdAt) {
-        return -1;
-      } else {
-        return 1;
-      }
-    })
-    .filter((a) => {
-      return new Date(a.createdAt) > startDate;
-    })
-    .map((a) => {
-      if (moment(a.createdAt).format("YYYY-MM-DD") == curDate) {
-        channelCount += 1;
-      } else {
-        channelChart.push({
-          count: channelCount,
-          date: new Date(curDate),
-        });
-        channelCount = 1;
-        curDate = moment(a.createdAt).format("YYYY-MM-DD");
-      }
-    });
-  channelChart.push({
-    count: channelCount,
-    date: new Date(curDate),
-  });
-  return channelChart;
+
+  return Array.from(chart.entries()).map(([date, count]) => ({
+    date: new Date(date),
+    count,
+  }));
 };
 
 // VideoNFT
@@ -404,79 +182,18 @@ export const getVideoNftChartData = async (start: Date, end: Date) => {
 
 // Videos
 
-export const getVideoStatus = async (start: number, end: number) => {
-  const { GetVideoCount, GetNonEmptyChannel } = getSdk(client);
-  const defaultLimit = 1000;
-  let curDate = "";
-  let count = 0;
-  const videoChart: Array<DailyData> = [];
-  const {
-    videosConnection: { totalCount: startCount },
-  } = await GetVideoCount({
-    where: { createdInBlock_lt: start },
-  });
-  const {
-    videosConnection: { totalCount: endCount },
-  } = await GetVideoCount({
-    where: { createdInBlock_lte: end },
-  });
-  const growthQty = endCount - startCount;
-  const growthPct = decimalAdjust((growthQty / startCount) * 100);
-  let loop = Math.ceil(growthQty / defaultLimit);
-  for (let i = 0; i < loop; i++) {
-    const { videos } = await GetNonEmptyChannel({
-      where: {
-        createdInBlock_gte: start,
-        createdInBlock_lte: end,
-      },
-      limit: defaultLimit,
-      offset: defaultLimit * i,
-    });
-    if (curDate == "") {
-      curDate = moment(videos[0].createdAt).format("YYYY-MM-DD");
-    }
-    videos.map((video) => {
-      if (moment(video.createdAt).format("YYYY-MM-DD") == curDate) count++;
-      else {
-        videoChart.push({
-          date: new Date(curDate),
-          count,
-        });
-        count = 1;
-        curDate = moment(video.createdAt).format("YYYY-MM-DD");
-      }
-    });
-  }
-  videoChart.push({
-    date: new Date(curDate),
-    count,
-  });
-  return {
-    startBlock: startCount,
-    endBlock: endCount,
-    growthQty,
-    growthPct,
-    chartData: videoChart,
-  };
-};
+export const getVideoChartData = async (
+  start: number,
+  end: number,
+  totalCount: number,
+): Promise<DailyData[]> => {
+  const chart: Map<string, number> = new Map();
 
-export const getVideoChartData = async (start: number, end: number) => {
-  const { GetNonEmptyChannel, GetVideoCount } = getSdk(client);
-  const defaultLimit = 1000;
-  let curDate = "";
-  let count = 0;
-  const videoChart: Array<DailyData> = [];
-  const {
-    videosConnection: { totalCount },
-  } = await GetVideoCount({
-    where: {
-      createdInBlock_gt: start,
-      createdInBlock_lte: end,
-    },
-  });
-  let loop = Math.ceil(totalCount / defaultLimit);
+  const { GetVideoCreationDate } = getSdk(client);
+  const defaultLimit = 40_000;
+  const loop = Math.ceil(totalCount / defaultLimit);
   for (let i = 0; i < loop; i++) {
-    const { videos } = await GetNonEmptyChannel({
+    const { videos } = await GetVideoCreationDate({
       where: {
         createdInBlock_gt: start,
         createdInBlock_lte: end,
@@ -484,26 +201,15 @@ export const getVideoChartData = async (start: number, end: number) => {
       limit: defaultLimit,
       offset: defaultLimit * i,
     });
-    if (curDate == "") {
-      curDate = moment(videos[0].createdAt).format("YYYY-MM-DD");
-    }
-    videos.map((video) => {
-      if (moment(video.createdAt).format("YYYY-MM-DD") == curDate) count++;
-      else {
-        videoChart.push({
-          date: new Date(curDate),
-          count,
-        });
-        count = 1;
-        curDate = moment(video.createdAt).format("YYYY-MM-DD");
-      }
-    });
+    videos
+      .map(({ createdAt }) => createdAt.split("T")[0])
+      .forEach((date) => chart.set(date, (chart.get(date) || 0) + 1));
   }
-  videoChart.push({
-    date: new Date(curDate),
+
+  return Array.from(chart.entries()).map(([date, count]) => ({
+    date: new Date(date),
     count,
-  });
-  return videoChart;
+  }));
 };
 
 // Forum

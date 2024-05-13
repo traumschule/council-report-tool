@@ -3,11 +3,14 @@ import moment from "moment";
 import {
   getBalance,
   getBlockHash,
-  getChannelStatus,
+  getNonEmptyChannelCount,
+  getNonEmptyChannelStatus,
+  getChannelChartData,
   getMembershipStatus,
   getProposals,
   getVideoNftStatus,
   getVideoStatus,
+  getVideoChartData,
   getTotalSupply,
   getMembershipCount,
   getOfficialCirculatingSupply,
@@ -18,6 +21,7 @@ import {
   getSdk,
   getWorkingGroups,
   getStorageStatus,
+  getStorageSize,
   getWorkingGroupSalary,
   getCouncilReward,
   getFundingProposal,
@@ -74,23 +78,18 @@ export async function generateReport1(
       createdAt_lte: blockTimestamp,
     },
   });
-  const { endCount } = await getChannelStatus(blockNumber);
   const {
     nftIssuedEventsConnection: { totalCount: nftCount },
   } = await GetNftIssuedCount({
     where: { createdAt_lte: blockTimestamp },
   });
-  let content = {
+  const content = {
     videoCount,
     channelCount,
-    nonEmptyChannelCount: endCount,
+    nonEmptyChannelCount: await getNonEmptyChannelCount(blockNumber),
     nftCount,
-    totalStorage: 0,
+    totalStorage: storageFlag ? await getStorageSize(blockTimestamp) : 0,
   };
-  if (storageFlag) {
-    const { endStorage } = await getStorageStatus(blockTimestamp);
-    content.totalStorage = endStorage;
-  }
 
   const totalSupply = toJoy(await getTotalSupply(api, blockHash));
   const currentTotalSupply = await getOfficialTotalSupply();
@@ -245,43 +244,38 @@ export async function generateReport2(
   };
 
   // 8. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#videos
-  const videos = await getVideoStatus(startBlockNumber, endBlockNumber);
-
-  const mediaStorage = {
-    startBlock: 0,
-    endBlock: 0,
-    growthQty: 0,
-    growthPct: 0,
-    chartData: [] as Array<DailyData>,
+  const videoStatus = await getVideoStatus(startBlockNumber, endBlockNumber);
+  const videos = {
+    ...videoStatus,
+    chartData: await getVideoChartData(
+      startBlockNumber,
+      endBlockNumber,
+      videoStatus.growthQty,
+    ),
   };
 
-  if (storageFlag) {
-    const { startStorage, endStorage, chartData } = await getStorageStatus(
-      endBlockTimestamp,
-      startBlockTimestamp,
-    );
-    mediaStorage.startBlock = startStorage;
-    mediaStorage.endBlock = endStorage;
-    mediaStorage.growthQty = decimalAdjust(endStorage - startStorage);
-    mediaStorage.growthPct = decimalAdjust(endStorage / startStorage - 1) * 100;
-    mediaStorage.chartData = chartData;
-  }
+  const mediaStorage = storageFlag
+    ? await getStorageStatus(startBlockTimestamp, endBlockTimestamp)
+    : {
+        startBlock: 0,
+        endBlock: 0,
+        growthQty: 0,
+        growthPct: 0,
+        chartData: [] as Array<DailyData>,
+      };
 
   // 9. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#channels
-  const nonEmptyChannelStatus = await getChannelStatus(
+  const nonEmptyChannelStatus = await getNonEmptyChannelStatus(
+    startBlockNumber,
     endBlockNumber,
-    startBlockTimestamp,
   );
   const nonEmptyChannel = {
-    startBlock: nonEmptyChannelStatus.startCount,
-    endBlock: nonEmptyChannelStatus.endCount,
-    growthQty:
-      nonEmptyChannelStatus.endCount - nonEmptyChannelStatus.startCount,
-    growthPct: decimalAdjust(
-      (nonEmptyChannelStatus.endCount / nonEmptyChannelStatus.startCount - 1) *
-        100,
+    ...nonEmptyChannelStatus,
+    chartData: await getChannelChartData(
+      startBlockNumber,
+      endBlockNumber,
+      nonEmptyChannelStatus.growthQty,
     ),
-    chartData: nonEmptyChannelStatus.chartData,
   };
 
   // 11. https://github.com/0x2bc/council/blob/main/Automation_Council_and_Weekly_Reports.md#video-nfts
@@ -496,44 +490,24 @@ export async function generateReport4(
 
   // nonEmptyChannel
 
-  const { startCount, endCount } = await getChannelStatus(
+  const nonEmptyChannel = await getNonEmptyChannelStatus(
+    startBlockNumber,
     endBlockNumber,
-    startBlockTimestamp,
   );
-  const nonEmptyChannel = {
-    startBlock: startCount,
-    endBlock: endCount,
-    growthQty: endCount - startCount,
-    growthPct: (endCount / startCount - 1) * 100,
-  };
 
   // video
 
   const videoStatus = await getVideoStatus(startBlockNumber, endBlockNumber);
-  const videos = {
-    startBlock: videoStatus.startBlock,
-    endBlock: videoStatus.endBlock,
-    growthQty: videoStatus.growthQty,
-    growthPct: videoStatus.growthPct,
-  };
 
   // storage
-  let mediaStorage = {
-    startBlock: 0,
-    endBlock: 0,
-    growthQty: 0,
-    growthPct: 0,
-  };
-  if (storageFlag) {
-    const { endStorage, startStorage } = await getStorageStatus(
-      endBlockTimestamp,
-      startBlockTimestamp,
-    );
-    mediaStorage.startBlock = startStorage;
-    mediaStorage.endBlock = endStorage;
-    mediaStorage.growthQty = decimalAdjust(endStorage - startStorage);
-    mediaStorage.growthPct = (endStorage / startStorage - 1) * 100;
-  }
+  const mediaStorage = storageFlag
+    ? await getStorageStatus(startBlockTimestamp, endBlockTimestamp)
+    : {
+        startBlock: 0,
+        endBlock: 0,
+        growthQty: 0,
+        growthPct: 0,
+      };
 
   // membership
 
@@ -869,7 +843,7 @@ export async function generateReport4(
     EMA30,
     inflation,
     nonEmptyChannel,
-    videos,
+    videos: videoStatus,
     mediaStorage: storageFlag ? mediaStorage : undefined,
     wgBudgetsOfJoy,
     wgBudgetOfJoyTotal,
