@@ -303,11 +303,11 @@ _project_inflation
 
 ### **Proposals**
 
-[https://pioneerapp.xyz/#/council/past-councils/_councilInfo_id](https://pioneerapp.xyz/#/council/past-councils/_councilInfo_id)
+[Proposals](https://dao.l1.media/#/council/past-councils/_councilInfo_id)
 
 ## **7. Financial Dashboard**
 
-### O**verall Spending**
+### **Overall Spending**
 
 ema30 (current term)= _EMA30_curEMA
 
@@ -383,7 +383,7 @@ export const councilReportWithOutMediaStatus = `
 
 _composition
 
-Election results: https://pioneerapp.xyz/#/election/past-elections/_councilInfo_id
+Election results: https://dao.l1.media/#/election/past-elections/_councilInfo_id
 
 ## 2. General stats
 
@@ -483,7 +483,7 @@ _project_inflation
 
 ### **Proposals**
 
-[https://pioneerapp.xyz/#/council/past-councils/_councilInfo_id](https://pioneerapp.xyz/#/council/past-councils/_councilInfo_id)
+[https://dao.l1.media/#/council/past-councils/_councilInfo_id](https://dao.l1.media/#/council/past-councils/_councilInfo_id)
 
 ## **7. Financial Dashboard**
 
