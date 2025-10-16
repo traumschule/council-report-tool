@@ -323,17 +323,15 @@ ema30 (prev term)= _EMA30_prevEMA
 | Fees and commissions |  | _overallBudget_fees_currentSpendingOfJoy | 0 | _overallBudget_fees_currentSpendingOfUsd |
 | Grand Total | _overallBudget_grandTotal_prevSpendingOfJoy | _overallBudget_grandTotal_currentSpendingOfJoy | _overallBudget_grandTotal_prevSpendingOfUsd | _overallBudget_grandTotal_currentSpendingOfUsd |
 
-**Chart 7.1. Overall spending for current term, JOY**
-
-**Chart 7.2. Overall spending for current term, USDT**
+**Chart 7.1 Overall spending for current term, Percent**
 
 ![_graph_overallPieChart](_graph_overallPieChart)
 
-**Chart 7.3. Overall spending (current term VS prev term), JOY**
+**Chart 7.2 Overall spending (current term VS prev term), JOY**
 
 ![_graph_overallBudget-joy](_graph_overallBudget-joy)
 
-**Chart 7.4. Overall spending (current term VS prev term), USDT**
+**Chart 7.3 Overall spending (current term VS prev term), USDT**
 
 ![_graph_overallBudget-usdt](_graph_overallBudget-usdt)
 
@@ -356,17 +354,15 @@ EMA30 (prev term)= _EMA30_prevEMA
 | Marketing | _wgSpending_Marketing_prevSpendingOfJoy | _wgSpending_Marketing_currentSpendingOfJoy | _wgSpending_Marketing_prevSpendingOfUsd | _wgSpending_Marketing_currentSpendingOfUsd |
 | Total | _wgSpendingTotal_prevSpendingOfJoy | _wgSpendingTotal_currentSpendingOfJoy| _wgSpendingTotal_prevSpendingOfUsd | _wgSpendingTotal_currentSpendingOfUsd |
 
-**Chart 7.5. WGs’ spending for current term, JOY**
-
-**Chart 7.6. WGs’ spending for current term, USDT**
+**Chart 7.4 WGs’ spending for current term, Percent**
 
 ![_graph_wgPieChart](_graph_wgPieChart)
 
-**Chart 7.7. WGs’ spending (current term VS prev term), JOY**
+**Chart 7.5 WGs’ spending (current term VS prev term), JOY**
 
 ![_graph_wgBudget-joy](_graph_wgBudget-joy)
 
-**Chart 7.8. WGs’ spending (current term VS prev term), USDT**
+**Chart 7.6 WGs’ spending (current term VS prev term), USDT**
 
 ![_graph_wgBudget-usdt](_graph_wgBudget-usdt)
 `;
